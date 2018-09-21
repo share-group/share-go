@@ -20,6 +20,10 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!\n")
 	})
 
+	e.GET("/users/:id", func(c echo.Context) error {
+		return c.String(http.StatusOK, "/users/"+c.Param("id"))
+	})
+
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
 }
