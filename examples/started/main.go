@@ -1,6 +1,6 @@
-package started
+package main
 
-import "share-go/server"
+import "github.com/share-group/share-go/server"
 
 func main() {
 	server.NewHttpServer().Run()
