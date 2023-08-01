@@ -1,7 +1,12 @@
 package main
 
-import "github.com/share-group/share-go/server"
+import (
+	"github.com/share-group/share-go/server"
+)
 
 func main() {
-	server.NewHttpServer().Run()
+	s := server.NewHttpServer()
+	s.SetPrefix("/api/v1")
+	s.SetController()
+	s.Run()
 }
