@@ -2,5 +2,6 @@
 .gitmodules
 *.exe
 *.DS*
+go.sum
 .vscode
 **/log/**

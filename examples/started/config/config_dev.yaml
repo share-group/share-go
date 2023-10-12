@@ -1,0 +1,50 @@
+# 端口配置
+listen_addr: "0.0.0.0:8082"
+
+# 业务配置
+config:
+  # 服务器配置
+  server:
+    prefix: "/api/v1"
+    self_addr: "http://127.0.0.1:8082"
+  # 缓存配置
+  cache:
+    default:
+      type: "redis"
+      host: "192.168.100.27:6379"
+      password: ""
+      db: 0
+  # 数据验证器配置
+  validator:
+    default:
+      enable: true
+  # 谷歌浏览器配置
+  chrome:
+    # 谷歌浏览器地址
+    path: "C:/Users/Administrator/AppData/Local/Google/Chrome/Application/chrome.exe"
+    # 谷歌浏览器用户数据存储地址
+    data_dir: "E:/910app/code/media-creator/workflow/video-pub/user-data"
+  # 基础中台配置
+  basiccenter:
+    api_url: "https://test-basic.910admin.com/basicapi"
+  # 群控后台配置
+  controlcenter:
+    api_key: "265b6683e"
+    api_url: "http://192.168.100.27:8031"
+  # 大数据后台配置
+  bigdata:
+    api_url: "https://test-data.910app.com/short_video"
+    api_one_key: "smSdkTagKey12345"
+    api_iv: "smSdkAesIv123456"
+    api_key_array: "0vptT3BcVan9JmVU,DEFZ9aRuLm9bXIg0,6oXgpm4nUmodxz3M,X83PrKbUpFpRH3xy,oMFfCODoWT0JtijQ,vnXURFtxwTDtxoqR,cEjPbdtZxVBR4Ge7,qwLYHzBL7Pmmhuko,Ytdy47Bm44kXv63x,I0p79irnCqUd5iai,9tQMy3rh42JfX3i3,6QnxCQCVHLQh3r0j,mfMaleKEGonpw4XU,qY6jiWB8CVN2PZ5V,z7yNLMqvp8bJ2w7R,w7R7M1Z1tyi8GtxG,IUGXVm52Eotx8EXt,aA0v3kh8Nm7bFhFc,8Qyoyyl4PrZjgZoV,l0ULFEoXNyIWMJrB,9xzh4yB6FluRBme4,0vjcaZGCve9GiNPH,in71h2N4eCrXe6MY,bKat1LHTUIxPnpkb,IW6uy3LoZLAj8qYC,xOw3dcaj1NkHxMd3,1lrVFvd1q7DXoIBu,2AJ8kHATBoVm6D0b,zJdbNFJOJul3u3oO,zL9pJnGqmXXwJNPC,mT2tuJ1RxbJ6ghXq,7zra3YrE067gNtyq"
+    api_chars: "0123456789abcdefghijklmnopqrxtuvwxyzABCDEFGHIJKLMNOPQRXTUVWXYZ"
+  # 多贝云配置
+  dobel:
+    host: "http://proxy-api.dobel.cn:8000"
+    account: "DI8A5xOdYqJdIiyT"
+    password: "CKbY531F1OnYSIcM"
+  # 微信机器人
+  wechatbot:
+    url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=f529dc86-ac68-4a12-a253-381b5ee59cb5"
+  # 企微通知人员(多个用“|”分割)
+  weixin_notify: "ruanzhijun"

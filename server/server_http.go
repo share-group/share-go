@@ -1,11 +1,16 @@
 package server
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	logger "github.com/share-group/share-go/bootstrap"
 	"net/http"
 )
+
+func init() {
+	godotenv.Load()
+}
 
 func NewHttpServer() *Server {
 	return &Server{}
