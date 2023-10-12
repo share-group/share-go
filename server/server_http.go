@@ -1,42 +1,54 @@
 package server
 
 import (
-	"github.com/joho/godotenv"
+	"encoding/json"
+	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	logger "github.com/share-group/share-go/bootstrap"
-	"net/http"
+	config "github.com/share-group/share-go/bootstrap"
+	"github.com/share-group/share-go/middleware"
+	"go.uber.org/zap"
+	"io"
+	"reflect"
+	"strings"
 )
 
-func init() {
-	godotenv.Load()
+var handlers = make([]any, 0)
+
+type Server struct {
 }
 
-func NewHttpServer() *Server {
-	return &Server{}
+// 设置处理器入口
+func (*Server) SetHandlers(handler any) {
+	handlers = append(handlers, handler)
 }
-
-// 设置接口前缀
-func (*Server) SetPrefix(prefix string) {}
-
-// 设置控制器入口
-func (*Server) SetController() {}
 
 func (*Server) Run() {
 	e := echo.New()
-	//if l, ok := e.Logger.(*logger.Logger); ok {
-	//	logFile, err := os.OpenFile(path.Join(cmd, "log/log.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	//	if err != nil {
-	//		fmt.Println("open log file failed, err:", err)
-	//		return
-	//	}
-	//	l.SetHeader("${time_rfc3339} ${level}")
-	//	l.SetOutput(logFile)
-	//}
-	e.Use(middleware.Logger())
-	e.GET("/", func(c echo.Context) error {
-		logger.Logger.Info("哈哈哈哈哈")
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Use(middleware.Logger)
+	for _, handler := range handlers {
+		obj := reflect.ValueOf(handler)
+		reflectType := reflect.TypeOf(handler)
+		for i := 0; i < reflectType.NumMethod(); i++ {
+			m := reflectType.Method(i)
+			paramType := m.Type.In(1)
+			method := "POST"
+			module := strings.TrimSpace(strings.Split(fmt.Sprintf("%s", reflectType.Elem()), ".")[0])
+			url := fmt.Sprintf("/%s/%s", module, strings.ToLower(m.Name))
+			zap.L().Info(fmt.Sprintf("register url: [%s] %s", method, url))
+			e.POST(url, middleware.ResponseFormatter(func(c echo.Context) any {
+				b, _ := io.ReadAll(c.Request().Body)
+				body := reflect.New(paramType).Interface()
+				json.Unmarshal(b, &body)
+				return m.Func.Call([]reflect.Value{obj, reflect.ValueOf(body).Elem()})[0].Interface()
+			}))
+		}
+	}
+
+	start(e)
+}
+
+func start(e *echo.Echo) {
+	e.HidePort = true
+	e.HideBanner = true
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%v", config.Get("server.port"))))
 }

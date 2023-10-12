@@ -4,4 +4,4 @@
 *.DS*
 go.sum
 .vscode
-**/log/**
+**/examples/**/log/**

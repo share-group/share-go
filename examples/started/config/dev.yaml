@@ -1,0 +1,13 @@
+# 应用配置
+application:
+  name: share-go
+
+# 服务器配置
+server:
+  port: 3002
+  prefix: "/api/v1"
+
+# 日志配置
+logger:
+  path: "./log"
+  level: "DEBUG"
