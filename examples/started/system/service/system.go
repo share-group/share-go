@@ -1,7 +1,6 @@
 package system
 
-type systemService struct {
-}
+type systemService struct{}
 
 var SystemService = newSystemService()
 

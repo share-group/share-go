@@ -1,11 +1,21 @@
+# 环境变量
+env: "dev"
+
 # 应用配置
 application:
-  name: share-go
+  name: "share-go-demo"
 
 # 服务器配置
 server:
   port: 3002
   prefix: "/api/v1"
+
+# 数据库配置
+data:
+  mongodb:
+    uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboard"
+  logging:
+    uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboardLog"
 
 # 日志配置
 logger:
