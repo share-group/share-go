@@ -72,13 +72,13 @@ func mappedHandler(e *echo.Echo) {
 			for _, httpMethod := range []string{"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"} {
 				httpMethod = util.StringUtil.FirstUpperCase(strings.ToLower(httpMethod))
 				if strings.HasPrefix(m.Name, httpMethod) {
-					method = httpMethod
+					method = strings.ToUpper(httpMethod)
 					url = fmt.Sprintf("%s/%s/%s", bootstrap.Config.GetStringValue("server.prefix"), module, util.StringUtil.FirstLowerCase(m.Name[len(method):]))
 					break
 				}
 			}
-			logger.Info(fmt.Sprintf("%s\t%s %v", strings.ToUpper(method), url, &m.Func))
-			methodFunMap[strings.ToUpper(method)](url, middleware.ResponseFormatter(func(c echo.Context) any {
+			logger.Info(fmt.Sprintf("%s\t%s %v", method, url, &m.Func))
+			methodFunMap[method](url, middleware.ResponseFormatter(func(c echo.Context) any {
 				callParam := []reflect.Value{obj}
 				if paramType != nil {
 					b, _ := io.ReadAll(c.Request().Body)
@@ -142,6 +142,6 @@ func start(e *echo.Echo) {
 	if port <= 0 {
 		logger.Fatal(fmt.Sprintf("invalid port: %d", port))
 	}
-	logger.Info(fmt.Sprintf("%s server started on 127.0.0.1:%d", bootstrap.Config.GetStringValue("application.name"), port))
+	logger.Info(fmt.Sprintf("%s server started on 0.0.0.0:%d", bootstrap.Config.GetStringValue("application.name"), port))
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
 }

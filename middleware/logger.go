@@ -12,7 +12,7 @@ func Logger() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			request := c.Request()
 			logger.Info(fmt.Sprintf("%v %v", request.Method, request.URL))
-			return nil
+			return next(c)
 		}
 	}
 }
