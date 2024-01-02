@@ -6,7 +6,7 @@ import (
 )
 
 type redisObj struct {
-	client *redis.Client
+	Client *redis.Client
 }
 
 var Redis = NewRedis(Config.GetStringValue("redis.host"), Config.GetStringValue("redis.password"), Config.GetIntegerValue("redis.db"))
@@ -21,9 +21,5 @@ func NewRedis(host, password string, db int) *redisObj {
 		log.Fatal(err)
 	}
 	log.Println("Redis connected:", host)
-	return &redisObj{client: redisClient}
-}
-
-func GetRedisClient() *redis.Client {
-	return redisClient
+	return &redisObj{Client: redisClient}
 }
