@@ -1,20 +1,18 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/share-group/share-go/bootstrap"
-	"go.uber.org/zap"
 )
 
 func Logger() echo.MiddlewareFunc {
 	logger := bootstrap.Logger.GetLogger()
-	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogURI:    true,
-		LogStatus: true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			logger.Info("request", zap.String("URI", v.URI), zap.Int("status", v.Status))
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			request := c.Request()
+			logger.Info(fmt.Sprintf("%v %v", request.Method, request.URL))
 			return nil
-		},
-	})
+		}
+	}
 }

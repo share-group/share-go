@@ -60,45 +60,43 @@ func mappedHandler(e *echo.Echo) {
 		reflectType := reflect.TypeOf(h)
 		for i := 0; i < reflectType.NumMethod(); i++ {
 			m := reflectType.Method(i)
-			if m.Type.NumIn() == 1 {
-				// 无参接口
-			} else {
-				// 有参接口
-			}
-
 			var paramType reflect.Type
 			if m.Type.NumIn() > 1 {
 				paramType = m.Type.In(1)
 			}
 
-			// 约定路由规则，HttpMethod+接口名，例如：GetCaptcha，其实就是 GET /captcha；PostLogin，其实就是 POST /login
-			for _, method := range []string{"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"} {
-				method = util.StringUtil.FirstUpperCase(strings.ToLower(method))
-				if strings.HasPrefix(m.Name, method) {
-					module := strings.TrimSpace(strings.Split(fmt.Sprintf("%s", reflectType.Elem()), ".")[0])
-					url := fmt.Sprintf("%s/%s/%s", bootstrap.Config.GetStringValue("server.prefix"), module, util.StringUtil.FirstLowerCase(m.Name[len(method):]))
-					logger.Info(fmt.Sprintf("%s %s %v", strings.ToUpper(method), url, &m.Func))
-					methodFunMap[strings.ToUpper(method)](url, middleware.ResponseFormatter(func(c echo.Context) any {
-						callParam := []reflect.Value{obj}
-						if paramType != nil {
-							b, _ := io.ReadAll(c.Request().Body)
-							body := reflect.New(paramType).Interface()
-							json.Unmarshal(b, &body)
-							if err := v.Struct(body); err != nil {
-								panic(processErr(body, err))
-								return nil
-							}
-							callParam = append(callParam, reflect.ValueOf(body).Elem())
-						}
-
-						returnData := m.Func.Call(callParam)
-						if len(returnData) == 1 || returnData[1].Interface() == nil {
-							return returnData[0].Interface()
-						}
-						panic(returnData[1].Interface())
-					}))
+			// 约定路由规则，HttpMethod+接口名，例如：GetCaptcha，其实就是 GET /captcha；PostLogin，其实就是 POST /login，如果没有指定HttpMethod的话默认POST
+			method := "POST"
+			module := strings.TrimSpace(strings.Split(fmt.Sprintf("%s", reflectType.Elem()), ".")[0])
+			url := fmt.Sprintf("%s/%s/%s", bootstrap.Config.GetStringValue("server.prefix"), module, util.StringUtil.FirstLowerCase(m.Name))
+			for _, httpMethod := range []string{"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"} {
+				httpMethod = util.StringUtil.FirstUpperCase(strings.ToLower(httpMethod))
+				if strings.HasPrefix(m.Name, httpMethod) {
+					method = httpMethod
+					url = fmt.Sprintf("%s/%s/%s", bootstrap.Config.GetStringValue("server.prefix"), module, util.StringUtil.FirstLowerCase(m.Name[len(method):]))
+					break
 				}
 			}
+			logger.Info(fmt.Sprintf("%s\t%s %v", strings.ToUpper(method), url, &m.Func))
+			methodFunMap[strings.ToUpper(method)](url, middleware.ResponseFormatter(func(c echo.Context) any {
+				callParam := []reflect.Value{obj}
+				if paramType != nil {
+					b, _ := io.ReadAll(c.Request().Body)
+					body := reflect.New(paramType).Interface()
+					json.Unmarshal(b, &body)
+					if err := v.Struct(body); err != nil {
+						panic(processErr(body, err))
+						return nil
+					}
+					callParam = append(callParam, reflect.ValueOf(body).Elem())
+				}
+
+				returnData := m.Func.Call(callParam)
+				if len(returnData) == 1 || returnData[1].Interface() == nil {
+					return returnData[0].Interface()
+				}
+				panic(returnData[1].Interface())
+			}))
 		}
 	}
 }

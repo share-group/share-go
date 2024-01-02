@@ -2,7 +2,6 @@ package system
 
 import (
 	"github.com/share-group/share-go/bootstrap"
-	system "github.com/share-group/share-go/examples/started/system/protocol"
 )
 
 var log = bootstrap.Logger.GetLogger()
@@ -21,11 +20,14 @@ func newSystemController() *systemController {
 	}
 }
 
-func (c *systemController) GetCaptcha() *system.ResponseCaptcha {
-	if len(c.Api) > 0 {
-		//fmt.Println(1 / (len(c.Api) - 1))
-		//return nil, errors.New("这个是个错误")
-	}
+func (c *systemController) GetCaptcha() string {
 	log.Info("哈哈哈  哦哦哦   嘻嘻😳😳")
-	return &system.ResponseCaptcha{UUID: "xxxxxx", Captcha: "xxxxxxxxxx"}
+	//return &system.ResponseCaptcha{UUID: "xxxxxx", Captcha: "xxxxxxxxxx"}
+	return "1212"
+}
+
+func (c *systemController) Login() string {
+	log.Info("哈哈哈  哦哦哦   嘻嘻😳😳")
+	//return &system.ResponseCaptcha{UUID: "xxxxxx", Captcha: "xxxxxxxxxx"}
+	return "1212"
 }
