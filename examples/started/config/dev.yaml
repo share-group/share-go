@@ -17,6 +17,12 @@ data:
   logging:
     uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboardLog"
 
+# redis配置
+redis:
+  host: "127.0.0.1:6379"
+  password: ""
+  db: 0
+
 # 日志配置
 logger:
   path: "./log"

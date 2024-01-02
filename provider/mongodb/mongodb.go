@@ -13,10 +13,6 @@ import (
 
 var logger = bootstrap.Logger.GetLogger()
 
-func Insert() {
-
-}
-
 // 查询数据
 //
 // query-查询条件; entity-数据实体
