@@ -48,7 +48,14 @@ func init() {
 		EncodeCaller: func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 			prefix := strings.ReplaceAll(caller.FullPath(), strings.ReplaceAll(cmd, "\\", "/"), "")
 			if strings.Contains(prefix, frameworkName) {
-				prefix = fmt.Sprintf("%s", strings.ReplaceAll(prefix[strings.Index(prefix, frameworkName)+len(frameworkName)+1:], "/", "."))
+				atvIndex := strings.Index(strings.ReplaceAll(prefix, frameworkName, " "), "@v")
+				if atvIndex > -1 {
+					prefix = prefix[atvIndex:]
+					prefix = prefix[strings.Index(prefix, "/"):]
+					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
+				} else {
+					prefix = fmt.Sprintf("%s", strings.ReplaceAll(prefix[strings.Index(prefix, frameworkName)+len(frameworkName)+1:], "/", "."))
+				}
 			} else {
 				prefix = strings.ReplaceAll(prefix[1:], "/", ".")
 			}
