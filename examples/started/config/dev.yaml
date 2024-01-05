@@ -10,18 +10,22 @@ server:
   port: 3002
   prefix: "/api/v1"
 
-# 数据库配置
+  # 数据验证器配置
+  validator:
+    enable: true
+
 data:
+  # 数据库配置
   mongodb:
     uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboard"
   logging:
     uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboardLog"
 
-# redis配置
-redis:
-  host: "127.0.0.1:6379"
-  password: ""
-  db: 0
+  # redis配置
+  redis:
+    host: "127.0.0.1:6379"
+    password: ""
+    db: 0
 
 # 日志配置
 logger:

@@ -1,4 +1,4 @@
-package system
+package service
 
 import "github.com/share-group/share-go/bootstrap"
 

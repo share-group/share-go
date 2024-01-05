@@ -1,4 +1,4 @@
-package system
+package protocol
 
 type ResponseCaptcha struct {
 	UUID    string `json:"uuid"`

@@ -33,15 +33,6 @@ func newConfig() *config {
 	return &config{}
 }
 
-// 获取布尔类型的配置
-func (c *config) GetBoolValue(key string) bool {
-	value, err := strconv.ParseBool(fmt.Sprintf("%s", viperConfig.Get(key)))
-	if err != nil {
-		logger.DPanic(err.Error())
-	}
-	return value
-}
-
 // 获取字符串类型的配置
 func (c *config) GetStringValue(key string) string {
 	value := viperConfig.Get(key)
@@ -49,6 +40,15 @@ func (c *config) GetStringValue(key string) string {
 		return ""
 	}
 	return strings.TrimSpace(fmt.Sprintf("%v", viperConfig.Get(key)))
+}
+
+// 获取布尔类型的配置
+func (c *config) GetBoolValue(key string) bool {
+	value, err := strconv.ParseBool(c.GetStringValue(key))
+	if err != nil {
+		logger.DPanic(err.Error())
+	}
+	return value
 }
 
 // 获取整型的配置

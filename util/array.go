@@ -9,6 +9,8 @@ func newArrayUtil() *arrayUtil {
 }
 
 // 取数组最后一位元素
+//
+// arr-数组
 func (s *arrayUtil) Last(arr []string) string {
 	if len(arr) <= 0 {
 		return ""
