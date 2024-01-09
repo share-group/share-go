@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -22,7 +23,7 @@ func newConfig() *config {
 	godotenv.Load()
 	cmd, _ := os.Getwd()
 	viperConfig = viper.New()
-	viperConfig.SetConfigName(os.Getenv("ENV"))
+	viperConfig.SetConfigName(fmt.Sprintf("config_%v", os.Getenv("ENV")))
 	viperConfig.SetConfigType("yaml")
 	viperConfig.AddConfigPath(path.Join(cmd, "config"))
 	err := viperConfig.ReadInConfig()
@@ -39,23 +40,32 @@ func (c *config) GetStringValue(key string) string {
 	if value == nil {
 		return ""
 	}
-	return strings.TrimSpace(fmt.Sprintf("%v", viperConfig.Get(key)))
+	return strings.TrimSpace(fmt.Sprintf("%v", value))
 }
 
 // 获取布尔类型的配置
 func (c *config) GetBoolValue(key string) bool {
-	value, err := strconv.ParseBool(c.GetStringValue(key))
+	value := c.GetStringValue(key)
+	if len(value) <= 0 {
+		return false
+	}
+	boolean, err := strconv.ParseBool(value)
 	if err != nil {
 		logger.DPanic(err.Error())
 	}
-	return value
+	return boolean
 }
 
 // 获取整型的配置
 func (c *config) GetIntegerValue(key string) int {
-	value, err := strconv.Atoi(c.GetStringValue(key))
+	value := c.GetStringValue(key)
+	if len(value) <= 0 {
+		return 0
+	}
+
+	integer, err := strconv.Atoi(value)
 	if err != nil {
 		logger.DPanic(err.Error())
 	}
-	return value
+	return integer
 }
