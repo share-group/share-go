@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"runtime/debug"
+	"strings"
 )
 
 type systemUtil struct{}
@@ -34,7 +36,7 @@ func (s *systemUtil) If(condition bool, trueVal any, falseVal any) any {
  * @param catchFunc 异常处理的方法 (可为空)
  * @param finallyFunc 无论异常与否都会最终执行的方法 (可为空)
  */
-func Goroutine(funs ...func()) {
+func (s *systemUtil) Goroutine(funs ...func()) {
 	if len(funs) <= 0 || len(funs) > 3 {
 		panic("参数错误")
 		return
@@ -62,10 +64,8 @@ func Goroutine(funs ...func()) {
 	finallyFunc()
 }
 
-/**
- * 获取本机IP
- */
-func GetLocalIp() string {
+// 获取本机IP
+func (s *systemUtil) GetLocalIp() string {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
 		log.Println("net.Interfaces failed, err:", err.Error())
@@ -85,4 +85,10 @@ func GetLocalIp() string {
 	}
 
 	return ""
+}
+
+// 获取主机名
+func (s *systemUtil) GetHostName() string {
+	hostname, _ := os.Hostname()
+	return strings.TrimSpace(hostname)
 }
