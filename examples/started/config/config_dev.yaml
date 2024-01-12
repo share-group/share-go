@@ -1,33 +1,37 @@
 # 环境变量
-env: "dev"
+env: dev
 
 # 应用配置
 application:
-  name: "share-go-demo"
+  name: share-go-demo
 
 # 服务器配置
 server:
   port: 3002
-  prefix: "/api/v1"
+  prefix: /api/v1
 
   # 数据验证器配置
   validator:
     enable: true
 
+  # 系统日志打印
+  logging:
+    enable: true
+
 data:
   # 数据库配置
   mongodb:
-    uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboard"
+    uri: mongodb://127.0.0.1:27017/Vue3DemoDashboard
   logging:
-    uri: "mongodb://127.0.0.1:27017/Vue3DemoDashboardLog"
+    uri: mongodb://127.0.0.1:27017/Vue3DemoDashboardLog
 
   # redis配置
   redis:
-    host: "127.0.0.1:6379"
-    password: ""
+    host: 127.0.0.1:6379
+    password: 
     db: 0
 
 # 日志配置
 logger:
-  path: "./log"
-  level: "DEBUG"
+  path: ./log
+  level: DEBUG

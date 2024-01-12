@@ -15,15 +15,25 @@ import (
 	"time"
 )
 
+var loggingEnable = config.GetBool("server.logging.enable")
+var loggingPretty = config.GetBool("server.logging.pretty")
 var requestLogger = loggerFactory.GetLogger("share.go.logging")
 var loggingMongodb = mongodb.NewMongodb(config.GetString("data.logging.uri"))
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志
-	if reflect.DeepEqual(util.SystemUtil.Env(), "production") {
+	if !loggingEnable || reflect.DeepEqual(util.SystemUtil.Env(), "production") {
 		return
 	}
+
 	requestBytes := c.Get("request").([]byte)
+	if loggingPretty {
+		request := make(map[string]any)
+		json.Unmarshal(requestBytes, &request)
+		requestBytes, _ = json.MarshalIndent(request, "", "    ")
+		c.Set("request", requestBytes)
+	}
+
 	requestLogger.Info(fmt.Sprintf("request %v, method: %v, data: %v, size: %v Byte", c.Request().URL.Path, c.Request().Method, string(requestBytes), len(requestBytes)))
 }
 
@@ -36,6 +46,12 @@ func SaveRequestLog(c echo.Context) {
 	json.Unmarshal(requestBytes, &request)
 	json.Unmarshal(responseBytes, &response)
 	exec := time.Since(requestTime.(time.Time))
+
+	if loggingPretty {
+		json.Unmarshal(responseBytes, &response)
+		responseBytes, _ = json.MarshalIndent(response, "", "    ")
+		c.Set("response", responseBytes)
+	}
 
 	if loggingMongodb != nil {
 		logEntity := bson.D{
@@ -67,9 +83,11 @@ func SaveRequestLog(c echo.Context) {
 	}
 
 	// 测试环境打印详细点，正式环境打印简单点
-	if reflect.DeepEqual(util.SystemUtil.Env(), "production") {
-		requestLogger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
-	} else {
-		requestLogger.Info(fmt.Sprintf("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec))
+	if loggingEnable {
+		if reflect.DeepEqual(util.SystemUtil.Env(), "production") {
+			requestLogger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
+		} else {
+			requestLogger.Info(fmt.Sprintf("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec))
+		}
 	}
 }
