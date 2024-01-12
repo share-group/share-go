@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"net"
 	"os"
@@ -13,8 +14,17 @@ type systemUtil struct{}
 
 var SystemUtil = newSystemUtil()
 
+func init() {
+	godotenv.Load()
+}
+
 func newSystemUtil() *systemUtil {
 	return &systemUtil{}
+}
+
+// 获取当前环境
+func (s *systemUtil) Env() string {
+	return os.Getenv("ENV")
 }
 
 /**
@@ -91,4 +101,15 @@ func (s *systemUtil) GetLocalIp() string {
 func (s *systemUtil) GetHostName() string {
 	hostname, _ := os.Hostname()
 	return strings.TrimSpace(hostname)
+}
+
+// 判断当前条件，并在值为false的时候抛出异常
+//
+// condition-判断条件; err-要抛出的异常
+func (s *systemUtil) AssertAndThrowError(condition bool, err any) {
+	if !condition {
+		return
+	}
+
+	panic(err)
 }

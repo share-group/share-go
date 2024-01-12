@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -12,12 +11,6 @@ var StringUtil = newStringUtil()
 
 func newStringUtil() *stringUtil {
 	return &stringUtil{}
-}
-
-// 转json
-func (s *stringUtil) JSON(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
 }
 
 // 首字母大写

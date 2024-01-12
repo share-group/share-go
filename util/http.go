@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -29,5 +30,7 @@ func (s *httpUtil) ParseQueryString(urlString string) string {
 		}
 		queryStringMap[k] = newValue
 	}
-	return StringUtil.JSON(queryStringMap)
+
+	bytes, _ := json.Marshal(queryStringMap)
+	return string(bytes)
 }

@@ -10,14 +10,14 @@ import (
 	"runtime/debug"
 )
 
-var logger = loggerFactory.GetLogger("share.go.ResponseFormatter")
+var formatterLogger = loggerFactory.GetLogger("share.go.ResponseFormatter")
 
 func ResponseFormatter(fun func(c echo.Context) any) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer func() {
 			if err := recover(); err != nil {
-				logger.Info(fmt.Sprintf("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack())))
-				logger.Info("xxxxxxxxxxxxxx  " + fmt.Sprintf("%v", c.Get("aaaaaaaaa")))
+				formatterLogger.Info(fmt.Sprintf("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack())))
+				formatterLogger.Info("xxxxxxxxxxxxxx  " + fmt.Sprintf("%v", c.Get("aaaaaaaaa")))
 				if reflect.DeepEqual(reflect.TypeOf(err).String(), "errors.BusinessException") {
 					e := err.(exception.BusinessException)
 					c.JSON(http.StatusOK, map[string]any{"code": e.Code, "message": e.Message})

@@ -1,18 +1,16 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	exception "github.com/share-group/share-go/exception"
 	"github.com/share-group/share-go/handler"
+	requestLogging "github.com/share-group/share-go/handler"
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
-	"github.com/share-group/share-go/provider/mongodb"
 	"github.com/share-group/share-go/util"
-	"go.mongodb.org/mongo-driver/bson"
 	"io"
 	"reflect"
 	"regexp"
@@ -23,7 +21,6 @@ import (
 var banner = ""
 var handlers = make([]any, 0)
 var logger = loggerFactory.GetLogger("share.go.http")
-var loggingMongodb = mongodb.NewMongodb(config.GetString("data.logging.uri"))
 
 type Server struct{}
 
@@ -112,6 +109,7 @@ func mappedHandler(e *echo.Echo) {
 					json.Unmarshal([]byte(query), &body)
 					request, _ := json.Marshal(body)
 					c.Set("request", request)
+					go requestLogging.PrintRequestLog(c)
 					if validatorEnable {
 						if err := _validator.(*validator.Validate).Struct(body); err != nil {
 							panic(exception.NewBusinessException(10002, processErr(body, err)))
@@ -121,60 +119,20 @@ func mappedHandler(e *echo.Echo) {
 					callParam = append(callParam, reflect.ValueOf(body))
 				}
 
-				returnDataIndex := 1
+				// 约定，只有一个返回，或者没有
 				returnData := m.Func.Call(callParam)
-				if len(returnData) == 1 || returnData[1].Interface() == nil {
-					returnDataIndex = 0
+				if len(returnData) <= 0 {
+					return nil
 				}
-				response, _ := json.Marshal(returnData[returnDataIndex].Interface())
-				c.Set("response", response)
-				go saveRequestLog(c)
 
-				if returnDataIndex == 0 {
-					return returnData[returnDataIndex].Interface()
-				}
-				panic(returnData[returnDataIndex].Interface())
+				ret := returnData[0].Interface()
+				response, _ := json.Marshal(ret)
+				c.Set("response", response)
+				go requestLogging.SaveRequestLog(c)
+				return ret
 			}))
 		}
 	}
-}
-
-func saveRequestLog(c echo.Context) {
-	logEntity := bson.D{
-		bson.E{Key: "machine", Value: util.SystemUtil.GetHostName()},
-		bson.E{Key: "url", Value: c.Request().URL.Path},
-		bson.E{Key: "originUrl", Value: c.Request().RequestURI},
-		bson.E{Key: "method", Value: c.Request().Method},
-		bson.E{Key: "ip", Value: c.RealIP()},
-	}
-
-	headers := bson.D{}
-	for header, name := range c.Request().Header {
-		key := strings.TrimSpace(header)
-		value := strings.TrimSpace(strings.Join(name, ";"))
-		if len(key) <= 0 || len(value) <= 0 {
-			continue
-		}
-		headers = append(headers, bson.E{Key: key, Value: value})
-	}
-
-	requestTime := c.Get("requestTime")
-	request := make(map[string]any)
-	response := make(map[string]any)
-	requestBytes := c.Get("request").([]byte)
-	responseBytes := c.Get("response").([]byte)
-	json.Unmarshal(requestBytes, &request)
-	json.Unmarshal(responseBytes, &response)
-	exec := time.Since(requestTime.(time.Time))
-	logEntity = append(logEntity, bson.E{Key: "headers", Value: headers})
-	logEntity = append(logEntity, bson.E{Key: "request", Value: request})
-	logEntity = append(logEntity, bson.E{Key: "response", Value: response})
-	logEntity = append(logEntity, bson.E{Key: "status", Value: c.Response().Status})
-	logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
-	logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
-	logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
-	go loggingMongodb.DB.Collection("Log_202401").InsertOne(context.Background(), logEntity)
-	logger.Info(fmt.Sprintf("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec))
 }
 
 func processErr(obj interface{}, err error) string {

@@ -1,11 +1,13 @@
 package system
 
 import (
+	UserError "github.com/share-group/share-go/examples/started/error/user"
 	"github.com/share-group/share-go/examples/started/protocol"
 	"github.com/share-group/share-go/examples/started/service"
 	"github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/provider/mongodb"
 	"github.com/share-group/share-go/provider/redis"
+	"github.com/share-group/share-go/util"
 	"strconv"
 )
 
@@ -25,6 +27,8 @@ type RequestCaptcha struct {
 func (c *captchaController) GetCaptcha(r *RequestCaptcha) *protocol.ResponseCaptcha {
 	id, b64s := service.CaptchaService.GetCaptcha()
 	logger.GetLogger().Info("xxxxxxxxxxxxxx")
+	util.SystemUtil.AssertAndThrowError(r.B == "1", UserError.TokenError)
+
 	if r.B == "2" {
 		b, _ := strconv.Atoi(r.B)
 		logger.GetLogger().Info(strconv.Itoa(2 / (b - 2)))
