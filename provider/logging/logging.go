@@ -26,7 +26,11 @@ func PrintRequestLog(c echo.Context) {
 		return
 	}
 
-	requestBytes := c.Get("request").([]byte)
+	req := c.Get("request")
+	requestBytes := make([]byte, 0)
+	if req != nil {
+		requestBytes = req.([]byte)
+	}
 	if loggingPretty {
 		request := make(map[string]any)
 		json.Unmarshal(requestBytes, &request)
@@ -38,8 +42,12 @@ func PrintRequestLog(c echo.Context) {
 }
 
 func SaveStringRequestLog(c echo.Context) {
+	req := c.Get("request")
 	requestTime := c.Get("requestTime")
-	requestBytes := c.Get("request").([]byte)
+	requestBytes := make([]byte, 0)
+	if req != nil {
+		requestBytes = req.([]byte)
+	}
 	responseBytes := c.Get("response").([]byte)
 	exec := time.Since(requestTime.(time.Time))
 
@@ -86,10 +94,14 @@ func SaveStringRequestLog(c echo.Context) {
 }
 
 func SaveJSONRequestLog(c echo.Context) {
+	req := c.Get("request")
 	requestTime := c.Get("requestTime")
 	request := make(map[string]any)
 	response := make(map[string]any)
-	requestBytes := c.Get("request").([]byte)
+	requestBytes := make([]byte, 0)
+	if req != nil {
+		requestBytes = req.([]byte)
+	}
 	responseBytes := c.Get("response").([]byte)
 	json.Unmarshal(requestBytes, &request)
 	json.Unmarshal(responseBytes, &response)

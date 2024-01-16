@@ -17,6 +17,10 @@ var enable = config.GetBool("server.validator.enable")
 var _validator = util.SystemUtil.If(enable, validator.New(), nil)
 
 func ValidateParameters(c echo.Context, paramType reflect.Type) any {
+	if paramType == nil {
+		return nil
+	}
+
 	b, _ := io.ReadAll(c.Request().Body)
 	body := reflect.New(paramType.Elem()).Interface()
 	query := util.HttpUtil.ParseQueryString(c.Request().URL.String())

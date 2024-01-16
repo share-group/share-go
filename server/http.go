@@ -104,7 +104,9 @@ func mappedHandler(e *echo.Echo) {
 				c.Set("requestTime", time.Now())
 				callParam := []reflect.Value{obj}
 				body := validator.ValidateParameters(c, paramType)
-				callParam = append(callParam, reflect.ValueOf(body))
+				if body != nil {
+					callParam = append(callParam, reflect.ValueOf(body))
+				}
 				go logging.PrintRequestLog(c)
 
 				// 约定，只有一个返回，或者没有
