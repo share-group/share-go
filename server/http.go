@@ -1,17 +1,14 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	exception "github.com/share-group/share-go/exception"
-	"github.com/share-group/share-go/handler"
-	requestLogging "github.com/share-group/share-go/handler"
 	"github.com/share-group/share-go/provider/config"
+	"github.com/share-group/share-go/provider/formatter"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
+	"github.com/share-group/share-go/provider/logging"
+	"github.com/share-group/share-go/provider/validator"
 	"github.com/share-group/share-go/util"
-	"io"
 	"reflect"
 	"regexp"
 	"strings"
@@ -20,7 +17,9 @@ import (
 
 var banner = ""
 var handlers = make([]any, 0)
-var logger = loggerFactory.GetLogger("share.go.http")
+
+var responseFormatter func(fun func(c echo.Context) any) echo.HandlerFunc
+var logger = loggerFactory.GetLogger()
 
 type Server struct{}
 
@@ -32,6 +31,11 @@ func (*Server) SetBanner(bannerString string) {
 // 设置处理器入口
 func (*Server) SetHandlers(handler any) {
 	handlers = append(handlers, handler)
+}
+
+// 设置返回数据格式器
+func (*Server) SetResponseFormatter(formatter func(fun func(c echo.Context) any) echo.HandlerFunc) {
+	responseFormatter = formatter
 }
 
 func (*Server) Run() {
@@ -58,9 +62,7 @@ func mappedHandler(e *echo.Echo) {
 		"PATCH":   e.PATCH,
 	}
 
-	// 是否启用数据验证器
-	validatorEnable := config.GetBool("server.validator.enable")
-	_validator := util.SystemUtil.If(validatorEnable, validator.New(), nil)
+	responseFormatter = util.SystemUtil.If(responseFormatter == nil, formatter.PlaintextResponseFormatter, responseFormatter).(func(fun func(c echo.Context) any) echo.HandlerFunc)
 
 	// 自动注册路由
 	for _, h := range handlers {
@@ -98,26 +100,12 @@ func mappedHandler(e *echo.Echo) {
 			logger.Info(fmt.Sprintf("%s %s %v", method, strings.ReplaceAll(url, prefix, ""), &m.Func))
 
 			// 注册路由方法
-			methodFunMap[method](url, handler.ResponseFormatter(func(c echo.Context) any {
+			methodFunMap[method](url, responseFormatter(func(c echo.Context) any {
 				c.Set("requestTime", time.Now())
 				callParam := []reflect.Value{obj}
-				if paramType != nil {
-					b, _ := io.ReadAll(c.Request().Body)
-					body := reflect.New(paramType.Elem()).Interface()
-					query := util.HttpUtil.ParseQueryString(c.Request().URL.String())
-					json.Unmarshal(b, &body)
-					json.Unmarshal([]byte(query), &body)
-					request, _ := json.Marshal(body)
-					c.Set("request", request)
-					go requestLogging.PrintRequestLog(c)
-					if validatorEnable {
-						if err := _validator.(*validator.Validate).Struct(body); err != nil {
-							panic(exception.NewBusinessException(10002, processErr(body, err)))
-							return nil
-						}
-					}
-					callParam = append(callParam, reflect.ValueOf(body))
-				}
+				body := validator.ValidateParameters(c, paramType)
+				callParam = append(callParam, reflect.ValueOf(body))
+				go logging.PrintRequestLog(c)
 
 				// 约定，只有一个返回，或者没有
 				returnData := m.Func.Call(callParam)
@@ -125,43 +113,10 @@ func mappedHandler(e *echo.Echo) {
 					return nil
 				}
 
-				ret := returnData[0].Interface()
-				response, _ := json.Marshal(ret)
-				c.Set("response", response)
-				go requestLogging.SaveRequestLog(c)
-				return ret
+				return returnData[0].Interface()
 			}))
 		}
 	}
-}
-
-func processErr(obj interface{}, err error) string {
-	if err == nil { //如果为nil 说明校验通过
-		return ""
-	}
-	invalid, ok := err.(*validator.InvalidValidationError) //如果是输入参数无效，则直接返回输入参数错误
-	if ok {
-		return "输入参数错误：" + invalid.Error()
-	}
-
-	errorList := make([]string, 0)
-	validationErrs := err.(validator.ValidationErrors) //断言是ValidationErrors
-	for _, validationErr := range validationErrs {
-		fieldName := validationErr.Field() //获取是哪个字段不符合格式
-		typeOf := reflect.TypeOf(obj)
-		// 如果是指针，获取其属性
-		if typeOf.Kind() == reflect.Ptr {
-			typeOf = typeOf.Elem()
-		}
-		field, _ := typeOf.FieldByName(fieldName) //通过反射获取filed
-		message := strings.TrimSpace(fmt.Sprintf("%s", field.Tag.Get("message")))
-		if len(message) > 0 {
-			errorList = append(errorList, message)
-		} else {
-			errorList = append(errorList, strings.TrimSpace(fmt.Sprintf("%s", validationErr)))
-		}
-	}
-	return strings.Join(errorList, ", ")
 }
 
 func showBanner() {

@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-var logger = loggerFactory.GetLogger("share.go.redis")
+var logger = loggerFactory.GetLogger()
 
 type redisObj struct {
 	Client *redis.Client

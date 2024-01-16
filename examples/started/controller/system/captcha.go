@@ -5,8 +5,6 @@ import (
 	"github.com/share-group/share-go/examples/started/protocol"
 	"github.com/share-group/share-go/examples/started/service"
 	"github.com/share-group/share-go/provider/logger"
-	"github.com/share-group/share-go/provider/mongodb"
-	"github.com/share-group/share-go/provider/redis"
 	"github.com/share-group/share-go/util"
 	"strconv"
 )
@@ -26,7 +24,6 @@ type RequestCaptcha struct {
 
 func (c *captchaController) GetCaptcha(r *RequestCaptcha) *protocol.ResponseCaptcha {
 	id, b64s := service.CaptchaService.GetCaptcha()
-	logger.GetLogger().Info("xxxxxxxxxxxxxx")
 	util.SystemUtil.AssertAndThrowError(r.B == "1", UserError.TokenError)
 
 	if r.B == "2" {
@@ -35,9 +32,6 @@ func (c *captchaController) GetCaptcha(r *RequestCaptcha) *protocol.ResponseCapt
 	}
 	return &protocol.ResponseCaptcha{UUID: id, Captcha: b64s}
 }
-func (c *captchaController) Captcha2(r *protocol.RequestLogin) *protocol.ResponseCaptcha {
-	id, b64s := service.CaptchaService.GetCaptcha()
-	redis.Redis.Client.Get("aa")
-	mongodb.Mongodb.DB.Name()
-	return &protocol.ResponseCaptcha{UUID: id, Captcha: b64s}
+func (c *captchaController) Captcha2() {
+	logger.GetLogger().Info("1111111111111111111111111111111")
 }

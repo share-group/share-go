@@ -9,11 +9,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
 	"reflect"
 	"strings"
 )
 
-var logger = loggerFactory.GetLogger("share.go.mongodb")
+var logger = loggerFactory.GetLogger()
 
 type mongodb struct {
 	DB *mongo.Database
@@ -33,13 +34,13 @@ func NewMongodb(uri string) *mongodb {
 	client, err := mongo.Connect(ctx, co)
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("%v", err))
-		return nil
+		os.Exit(1)
 	}
 	// 检查连接
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("%v", err))
-		return nil
+		os.Exit(1)
 	}
 	logger.Info(fmt.Sprintf("mongodb connect %s success ...", uri))
 	return &mongodb{DB: client.Database(dbName(uri))}

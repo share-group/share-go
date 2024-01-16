@@ -57,13 +57,17 @@ func init() {
 					} else {
 						prefix = fmt.Sprintf("%s", strings.ReplaceAll(prefix[strings.Index(prefix, frameworkName)+len(frameworkName)+1:], "/", "."))
 					}
+					prefix = prefix[:strings.LastIndex(prefix, ".")]
+					prefix = util.ArrayUtil.Last(strings.Split(prefix, "."))
+					prefix = fmt.Sprintf("share.go.%s", prefix)
 				} else {
 					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
+					lastDotIndex := strings.LastIndex(prefix, ".")
+					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), util.ArrayUtil.Last(strings.Split(caller.Function, ".")), strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
 				}
-				lastDotIndex := strings.LastIndex(prefix, ".")
-				prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), util.ArrayUtil.Last(strings.Split(caller.Function, ".")), strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
 			}
-			enc.AppendString(prefix)
+
+			enc.AppendString(strings.TrimSpace(prefix))
 		},
 		EncodeName: zapcore.FullNameEncoder,
 	}
@@ -83,7 +87,7 @@ func GetLogger(name ...string) *zap.Logger {
 	// 支持日志头重命名，默认是文件名和所在代码行数
 	if len(name) > 0 && len(name[0]) > 0 {
 		stackArray := strings.Split(string(debug.Stack()), "\n")
-		caller := strings.TrimSpace(stackArray[len(stackArray)-2])
+		caller := strings.TrimSpace(stackArray[6])
 		caller = caller[0:strings.LastIndex(caller, ":")]
 		callerAliasMap.Store(caller, name[0])
 	}
