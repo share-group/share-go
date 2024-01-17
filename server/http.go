@@ -1,6 +1,7 @@
 package server
 
 import (
+	"embed"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/provider/config"
@@ -9,6 +10,7 @@ import (
 	"github.com/share-group/share-go/provider/logging"
 	"github.com/share-group/share-go/provider/validator"
 	"github.com/share-group/share-go/util"
+	"io/fs"
 	"reflect"
 	"regexp"
 	"strings"
@@ -16,6 +18,9 @@ import (
 )
 
 var banner = ""
+
+//go:embed i18n/*
+var i18nFiles embed.FS
 var handlers = make([]any, 0)
 
 var responseFormatter func(fun func(c echo.Context) any) echo.HandlerFunc
@@ -39,6 +44,26 @@ func (*Server) SetResponseFormatter(formatter func(fun func(c echo.Context) any)
 }
 
 func (*Server) Run() {
+	// 获取子文件系统
+	subFS, err := fs.Sub(i18nFiles, "")
+	if err != nil {
+		fmt.Println("Error accessing sub filesystem:", err)
+		return
+	}
+
+	// 遍历子文件系统中的文件
+	err = fs.WalkDir(subFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			fmt.Println("Error walking directory:", err)
+			return err
+		}
+		fmt.Println("File:", path)
+		return nil
+	})
+	if err != nil {
+		fmt.Println("Error walking directory:", err)
+	}
+
 	e := echo.New()
 	addMiddleware(e)
 	mappedHandler(e)
