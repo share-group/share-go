@@ -7,14 +7,15 @@ import (
 	"github.com/labstack/echo/v4"
 	exception "github.com/share-group/share-go/exception"
 	"github.com/share-group/share-go/provider/config"
-	"github.com/share-group/share-go/util"
+	"github.com/share-group/share-go/util/httputil"
+	"github.com/share-group/share-go/util/systemutil"
 	"io"
 	"reflect"
 	"strings"
 )
 
 var enable = config.GetBool("server.validator.enable")
-var _validator = util.SystemUtil.If(enable, validator.New(), nil)
+var _validator = systemutil.If(enable, validator.New(), nil)
 
 func ValidateParameters(c echo.Context, paramType reflect.Type) any {
 	if paramType == nil {
@@ -23,7 +24,7 @@ func ValidateParameters(c echo.Context, paramType reflect.Type) any {
 
 	b, _ := io.ReadAll(c.Request().Body)
 	body := reflect.New(paramType.Elem()).Interface()
-	query := util.HttpUtil.ParseQueryString(c.Request().URL.String())
+	query := httputil.ParseQueryString(c.Request().URL.String())
 	json.Unmarshal(b, &body)
 	json.Unmarshal([]byte(query), &body)
 	request, _ := json.Marshal(body)

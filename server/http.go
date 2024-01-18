@@ -8,7 +8,9 @@ import (
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/provider/logging"
 	"github.com/share-group/share-go/provider/validator"
-	"github.com/share-group/share-go/util"
+	"github.com/share-group/share-go/util/maputil"
+	"github.com/share-group/share-go/util/stringutil"
+	"github.com/share-group/share-go/util/systemutil"
 	"reflect"
 	"regexp"
 	"strings"
@@ -63,7 +65,8 @@ func mappedHandler(e *echo.Echo) {
 		"PATCH":   e.PATCH,
 	}
 
-	responseFormatter = util.SystemUtil.If(responseFormatter == nil, formatter.PlaintextResponseFormatter, responseFormatter).(func(fun func(c echo.Context) any) echo.HandlerFunc)
+	methods := maputil.Keys(methodFunMap)
+	responseFormatter = systemutil.If(responseFormatter == nil, formatter.PlaintextResponseFormatter, responseFormatter).(func(fun func(c echo.Context) any) echo.HandlerFunc)
 
 	// 自动注册路由
 	for _, h := range handlers {
@@ -78,14 +81,14 @@ func mappedHandler(e *echo.Echo) {
 
 			// 约定路由规则，HttpMethod+接口名，例如：GetCaptcha，其实就是 GET /captcha；PostLogin，其实就是 POST /login，如果没有指定HttpMethod的话默认POST
 			method := "POST"
-			apiName := util.StringUtil.FirstLowerCase(m.Name)
+			apiName := stringutil.FirstLowerCase(m.Name)
 			prefix := config.GetString("server.prefix")
 			module := strings.TrimSpace(strings.Split(fmt.Sprintf("%s", reflectType.Elem()), ".")[0])
-			for _, httpMethod := range []string{"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"} {
-				httpMethod = util.StringUtil.FirstUpperCase(strings.ToLower(httpMethod))
+			for _, httpMethod := range methods {
+				httpMethod = stringutil.FirstUpperCase(strings.ToLower(httpMethod))
 				if strings.HasPrefix(m.Name, httpMethod) {
 					method = strings.ToUpper(httpMethod)
-					apiName = util.StringUtil.FirstLowerCase(m.Name[len(method):])
+					apiName = stringutil.FirstLowerCase(m.Name[len(method):])
 					break
 				}
 			}
@@ -108,7 +111,7 @@ func mappedHandler(e *echo.Echo) {
 				if body != nil {
 					callParam = append(callParam, reflect.ValueOf(body))
 				}
-				go logging.PrintRequestLog(c)
+				logging.PrintRequestLog(c)
 
 				// 约定，只有一个返回，或者没有
 				returnData := m.Func.Call(callParam)

@@ -8,7 +8,7 @@ import (
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/provider/mongodb"
-	"github.com/share-group/share-go/util"
+	"github.com/share-group/share-go/util/systemutil"
 	"go.mongodb.org/mongo-driver/bson"
 	"reflect"
 	"strings"
@@ -22,7 +22,7 @@ var loggingMongodb = mongodb.NewMongodb(config.GetString("data.logging.uri"))
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志
-	if !loggingEnable || reflect.DeepEqual(util.SystemUtil.Env(), "production") {
+	if !loggingEnable || reflect.DeepEqual(systemutil.Env(), "production") {
 		return
 	}
 
@@ -53,7 +53,7 @@ func SaveStringRequestLog(c echo.Context) {
 
 	if loggingMongodb != nil {
 		logEntity := bson.D{
-			bson.E{Key: "machine", Value: util.SystemUtil.GetHostName()},
+			bson.E{Key: "machine", Value: systemutil.GetHostName()},
 			bson.E{Key: "url", Value: c.Request().URL.Path},
 			bson.E{Key: "originUrl", Value: c.Request().RequestURI},
 			bson.E{Key: "method", Value: c.Request().Method},
@@ -82,7 +82,7 @@ func SaveStringRequestLog(c echo.Context) {
 
 	// 测试环境打印详细点，正式环境打印简单点
 	if loggingEnable {
-		if reflect.DeepEqual(util.SystemUtil.Env(), "production") {
+		if reflect.DeepEqual(systemutil.Env(), "production") {
 			logger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
 		} else {
 			if loggingPretty {
@@ -109,7 +109,7 @@ func SaveJSONRequestLog(c echo.Context) {
 
 	if loggingMongodb != nil {
 		logEntity := bson.D{
-			bson.E{Key: "machine", Value: util.SystemUtil.GetHostName()},
+			bson.E{Key: "machine", Value: systemutil.GetHostName()},
 			bson.E{Key: "url", Value: c.Request().URL.Path},
 			bson.E{Key: "originUrl", Value: c.Request().RequestURI},
 			bson.E{Key: "method", Value: c.Request().Method},
@@ -138,7 +138,7 @@ func SaveJSONRequestLog(c echo.Context) {
 
 	// 测试环境打印详细点，正式环境打印简单点
 	if loggingEnable {
-		if reflect.DeepEqual(util.SystemUtil.Env(), "production") {
+		if reflect.DeepEqual(systemutil.Env(), "production") {
 			logger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
 		} else {
 			if loggingPretty {

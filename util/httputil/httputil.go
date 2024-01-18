@@ -1,4 +1,4 @@
-package util
+package httputil
 
 import (
 	"encoding/json"
@@ -7,18 +7,10 @@ import (
 	"strings"
 )
 
-type httpUtil struct{}
-
-var HttpUtil = newHttpUtil()
-
-func newHttpUtil() *httpUtil {
-	return &httpUtil{}
-}
-
 // 解析 querystring
 //
-// urlString
-func (s *httpUtil) ParseQueryString(urlString string) string {
+// urlString-地址
+func ParseQueryString(urlString string) string {
 	queryStringMap := make(map[string]any)
 	parsedURL, _ := url.Parse(urlString)
 	for k, v := range parsedURL.Query() {

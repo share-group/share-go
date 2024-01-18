@@ -64,7 +64,7 @@ func JSONResponseFormatter(fun func(c echo.Context) any) echo.HandlerFunc {
 		}()
 
 		response := fun(c)
-		b, _ := json.Marshal(fun(c))
+		b, _ := json.Marshal(response)
 		c.Set("response", b)
 		go logging.SaveJSONRequestLog(c)
 		return c.JSON(http.StatusOK, map[string]any{"code": 0, "data": response})

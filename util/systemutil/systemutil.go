@@ -1,8 +1,7 @@
-package util
+package systemutil
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"net"
 	"os"
@@ -10,20 +9,8 @@ import (
 	"strings"
 )
 
-type systemUtil struct{}
-
-var SystemUtil = newSystemUtil()
-
-func init() {
-	godotenv.Load()
-}
-
-func newSystemUtil() *systemUtil {
-	return &systemUtil{}
-}
-
 // 获取当前环境
-func (s *systemUtil) Env() string {
+func Env() string {
 	return os.Getenv("ENV")
 }
 
@@ -33,7 +20,7 @@ func (s *systemUtil) Env() string {
  * @param trueVal 条件为真时的值
  * @param falseVal 条件为假时的值
  */
-func (s *systemUtil) If(condition bool, trueVal any, falseVal any) any {
+func If(condition bool, trueVal any, falseVal any) any {
 	if condition {
 		return trueVal
 	}
@@ -46,7 +33,7 @@ func (s *systemUtil) If(condition bool, trueVal any, falseVal any) any {
  * @param catchFunc 异常处理的方法 (可为空)
  * @param finallyFunc 无论异常与否都会最终执行的方法 (可为空)
  */
-func (s *systemUtil) Goroutine(funs ...func()) {
+func Goroutine(funs ...func()) {
 	if len(funs) <= 0 || len(funs) > 3 {
 		panic("参数错误")
 		return
@@ -75,7 +62,7 @@ func (s *systemUtil) Goroutine(funs ...func()) {
 }
 
 // 获取本机IP
-func (s *systemUtil) GetLocalIp() string {
+func GetLocalIp() string {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
 		log.Println("net.Interfaces failed, err:", err.Error())
@@ -98,7 +85,7 @@ func (s *systemUtil) GetLocalIp() string {
 }
 
 // 获取主机名
-func (s *systemUtil) GetHostName() string {
+func GetHostName() string {
 	hostname, _ := os.Hostname()
 	return strings.TrimSpace(hostname)
 }
@@ -106,7 +93,7 @@ func (s *systemUtil) GetHostName() string {
 // 判断当前条件为false的时候抛出异常
 //
 // condition-判断条件; err-要抛出的异常
-func (s *systemUtil) AssertAndThrowError(condition bool, err error) {
+func AssertAndThrowError(condition bool, err error) {
 	if !condition {
 		return
 	}

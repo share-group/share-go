@@ -4,7 +4,7 @@ import (
 	"fmt"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/share-group/share-go/provider/config"
-	"github.com/share-group/share-go/util"
+	"github.com/share-group/share-go/util/arrayutil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
@@ -58,12 +58,12 @@ func init() {
 						prefix = fmt.Sprintf("%s", strings.ReplaceAll(prefix[strings.Index(prefix, frameworkName)+len(frameworkName)+1:], "/", "."))
 					}
 					prefix = prefix[:strings.LastIndex(prefix, ".")]
-					prefix = util.ArrayUtil.Last(strings.Split(prefix, "."))
+					prefix = arrayutil.Last(strings.Split(prefix, "."))
 					prefix = fmt.Sprintf("share.go.%s", prefix)
 				} else {
 					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
 					lastDotIndex := strings.LastIndex(prefix, ".")
-					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), util.ArrayUtil.Last(strings.Split(caller.Function, ".")), strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
+					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), arrayutil.Last(strings.Split(caller.Function, ".")), strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
 				}
 			}
 
