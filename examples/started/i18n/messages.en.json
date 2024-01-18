@@ -1,0 +1,4 @@
+{
+  "hello": "Hello, World!",
+  "eeeee": "{{.Name}} has {{.Count}} emails."
+}

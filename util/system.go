@@ -103,10 +103,10 @@ func (s *systemUtil) GetHostName() string {
 	return strings.TrimSpace(hostname)
 }
 
-// 判断当前条件，并在值为false的时候抛出异常
+// 判断当前条件为false的时候抛出异常
 //
 // condition-判断条件; err-要抛出的异常
-func (s *systemUtil) AssertAndThrowError(condition bool, err any) {
+func (s *systemUtil) AssertAndThrowError(condition bool, err error) {
 	if !condition {
 		return
 	}

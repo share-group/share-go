@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 var viperConfig *viper.Viper
@@ -22,6 +23,15 @@ func init() {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("fatal error config file: %v", err))
 	}
+
+	// 获取程序当前的根目录
+	executable, _ := os.Executable()
+	viperConfig.Set("root", filepath.Dir(executable))
+}
+
+// 获取程序当前运行的根目录
+func GetRootDir() string {
+	return GetString("root")
 }
 
 // 获取字符串类型的配置
