@@ -1,6 +1,7 @@
 package maputil
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -10,7 +11,7 @@ func GetValueFromMap[K string, V any](m map[K]V, key K, defaultValue V) V {
 		return defaultValue
 	}
 	if val, ok := m[key]; ok {
-		if reflect.ValueOf(val).IsZero() {
+		if reflect.DeepEqual("<nil>", fmt.Sprintf("%v", val)) || reflect.ValueOf(val).IsZero() {
 			return defaultValue
 		}
 		return val

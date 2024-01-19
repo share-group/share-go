@@ -18,7 +18,7 @@ import (
 var logger = loggerFactory.GetLogger()
 var loggingEnable = config.GetBool("server.logging.enable")
 var loggingPretty = config.GetBool("server.logging.pretty")
-var loggingMongodb = mongodb.NewMongodb(config.GetString("data.logging.uri"))
+var loggingMongodb = mongodb.GetInstance("logging")
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志

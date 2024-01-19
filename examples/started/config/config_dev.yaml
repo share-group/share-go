@@ -21,15 +21,19 @@ server:
 data:
   # 数据库配置
   mongodb:
-    uri: mongodb://127.0.0.1:27017/Vue3DemoDashboard
-  logging:
-    uri: mongodb://127.0.0.1:27017/Vue3DemoDashboardLog
+    -
+      name: dashboard
+      uri: mongodb://127.0.0.1:27017/Vue3DemoDashboard
+    -
+      name: logging
+      uri: mongodb://127.0.0.1:27017/Vue3DemoDashboardLog
 
   # redis配置
   redis:
-    host: 127.0.0.1:6379
-    password: 
-    db: 0
+    -
+      host: 127.0.0.1:6379
+      password:
+      db: 0
 
 # 日志配置
 logger:

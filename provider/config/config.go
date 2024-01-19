@@ -48,3 +48,13 @@ func GetBool(key string) bool {
 func GetInt(key string) int {
 	return viperConfig.GetInt(key)
 }
+
+// 获取一个KV对象的配置
+func GetMap[T any](key string) map[string]T {
+	return viperConfig.Get(key).(map[string]T)
+}
+
+// 获取一个数组的配置
+func GetList(key string) []any {
+	return viperConfig.Get(key).([]any)
+}
