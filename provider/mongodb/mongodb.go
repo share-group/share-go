@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
+	"github.com/share-group/share-go/util/arrayutil"
 	"github.com/share-group/share-go/util/jsonutil"
 	"github.com/share-group/share-go/util/maputil"
+	"github.com/share-group/share-go/util/stringutil"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var connectionMap sync.Map
@@ -69,6 +72,12 @@ func dbName(uri string) string {
 	return strings.TrimSpace(uri[lastIndexSlash:])
 }
 
+func throwErrorIfNotNil(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func GetInstance(connectionName ...string) *mongodb {
 	if len(connectionName) <= 0 || len(connectionName[0]) <= 0 {
 		connectionName = append(connectionName, "default")
@@ -83,12 +92,11 @@ func GetInstance(connectionName ...string) *mongodb {
 
 // 创建索引
 //
-// entity-数据实体;connectionName-连接名称
+// entity-数据实体; connectionName-连接名称
 func EnsureIndex[T any](entity T, connectionName ...string) {
 	ctx := context.Background()
 	typ := reflect.TypeOf(entity)
 	connection := GetInstance(connectionName...)
-	connection.DB.Drop(ctx)
 	collection := typ.Name()
 	for i := 0; i < typ.NumField(); i++ {
 		indexJSON := strings.TrimSpace(typ.Field(i).Tag.Get("index"))
@@ -126,10 +134,9 @@ func EnsureIndex[T any](entity T, connectionName ...string) {
 		if sparse {
 			indexModel.Options.SetSparse(sparse)
 		}
+
 		_, err := connection.DB.Collection(collection).Indexes().CreateOne(ctx, indexModel)
-		if err != nil {
-			panic(err)
-		}
+		throwErrorIfNotNil(err)
 
 		key_s, _ := json.Marshal(indexModel.Keys)
 		option_s, _ := json.Marshal(indexModel.Options)
@@ -137,44 +144,172 @@ func EnsureIndex[T any](entity T, connectionName ...string) {
 	}
 }
 
-// 查询数据
+// 反序列化mongodb的数据到指定是数据实体
 //
-// query-查询条件; entity-数据实体
-func (m *mongodb) Find(query bson.D, entity any, opts ...*options.FindOptions) any {
+// ctx-上下文; cursor-mongodb返回的游标; entity-数据实体
+func Decode[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []T {
+	defer cursor.Close(ctx)
+	result := make([]T, 0)
+	for cursor.Next(ctx) {
+		cursor.Decode(&entity)
+		result = append(result, entity)
+	}
+	return result
+}
+
+// 插入单条数据
+//
+// entity-数据实体
+func (m *mongodb) InsertOne(entity any) primitive.ObjectID {
+	return arrayutil.First(m.InsertMany(entity))
+}
+
+// 插入多条数据
+//
+// entity-数据实体(可以传数组或者传无限个单条)
+func (m *mongodb) InsertMany(entity ...any) []primitive.ObjectID {
+	ctx := context.Background()
+	classType := reflect.TypeOf(arrayutil.First(entity))
+	ignoreColumn := []string{"id", "createTime", "updateTime"}
+	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	documents := make([]any, 0)
+	for _, item := range entity {
+		document := make(bson.D, 0)
+		pValue := reflect.ValueOf(item)
+		for i := 0; i < classType.NumField(); i++ {
+			fieldName := stringutil.FirstLowerCase(classType.Field(i).Name)
+			if arrayutil.Contains(ignoreColumn, fieldName) {
+				continue
+			}
+			fieldValue := pValue.Field(i).Interface()
+			document = append(document, bson.E{Key: fieldName, Value: fieldValue})
+		}
+
+		now := time.Now().UnixMilli()
+		document = append(document, bson.E{Key: "createTime", Value: now})
+		document = append(document, bson.E{Key: "updateTime", Value: now})
+		documents = append(documents, document)
+	}
+
+	result, err := c.InsertMany(ctx, documents)
+	throwErrorIfNotNil(err)
+	insertedIDs := make([]primitive.ObjectID, 0)
+	for _, insertedID := range result.InsertedIDs {
+		insertedIDs = append(insertedIDs, insertedID.(primitive.ObjectID))
+	}
+	return insertedIDs
+}
+
+// 更新单条数据
+//
+// entity-数据实体; id-主键id; update-需要更新的数据; opts-数据更新选项
+func (m *mongodb) UpdateOne(entity any, id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	throwErrorIfNotNil(err)
+	return m.UpdateMany(entity, bson.D{{"_id", objectID}}, update, opts...)
+}
+
+// 更新多条数据
+//
+// entity-数据实体; query-查询条件; update-需要更新的数据; opts-数据更新选项
+func (m *mongodb) UpdateMany(entity any, query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+	return m.doUpdateMany(entity, query, update, "$set", opts...)
+}
+
+// 单条数据的字段自增
+//
+// entity-数据实体; id-主键id; update-需要自增的数据; opts-数据更新选项
+func (m *mongodb) IncOne(entity any, id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	throwErrorIfNotNil(err)
+	return m.doUpdateMany(entity, bson.D{{"_id", objectID}}, update, "$inc", opts...)
+}
+
+// 更新多条数据
+//
+// entity-数据实体; query-查询条件; update-需要更新的数据; operator-操作符; opts-数据更新选项
+func (m *mongodb) doUpdateMany(entity any, query, update bson.D, operator string, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	ctx := context.Background()
 	classType := reflect.TypeOf(entity)
 	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
-	cursor, _ := c.Find(ctx, query, opts...)
-	defer cursor.Close(ctx)
-	slice := reflect.MakeSlice(reflect.SliceOf(classType), 1, 1).Interface()
-	err := cursor.All(ctx, &slice)
-	if err != nil {
-		logger.DPanic(err.Error())
-	}
-	return slice
+	updateResult, err := c.UpdateMany(ctx, query, bson.D{
+		{operator, update},
+		{"$set", bson.D{{Key: "updateTime", Value: time.Now().UnixMilli()}}},
+	}, opts...)
+	throwErrorIfNotNil(err)
+	return updateResult
+}
+
+// 删除单条数据
+//
+// entity-数据实体; query-查询条件; opts-数据删除选项
+func (m *mongodb) DeleteOne(entity any, query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+	ctx := context.Background()
+	classType := reflect.TypeOf(entity)
+	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	updateResult, err := c.DeleteOne(ctx, query, opts...)
+	throwErrorIfNotNil(err)
+	return updateResult
+}
+
+// 删除多条数据
+//
+// entity-数据实体; query-查询条件; opts-数据删除选项
+func (m *mongodb) DeleteMany(entity any, query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+	ctx := context.Background()
+	classType := reflect.TypeOf(entity)
+	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	updateResult, err := c.DeleteMany(ctx, query, opts...)
+	throwErrorIfNotNil(err)
+	return updateResult
+}
+
+// 查询多条数据
+//
+// query-查询条件; entity-数据实体; opts-查询选项
+func (m *mongodb) Find(query bson.D, entity any, opts ...*options.FindOptions) (context.Context, *mongo.Cursor) {
+	ctx := context.Background()
+	classType := reflect.TypeOf(entity)
+	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	cursor, err := c.Find(ctx, query, opts...)
+	throwErrorIfNotNil(err)
+	return ctx, cursor
+}
+
+// 查询单条数据
+//
+// query-查询条件; entity-数据实体
+func (m *mongodb) FindOne(query bson.D, entity any) (context.Context, *mongo.Cursor) {
+	opts := &options.FindOptions{}
+	opts.SetLimit(1)
+	return m.Find(query, entity, opts)
 }
 
 // 游标翻页
 //
 // query-查询条件; cursor-游标; pageSize-分页大小; sort-排序方式; entity-数据实体
-func (m *mongodb) PaginationByCursor(query bson.D, cursor *string, pageSize int64, sort bson.D, entity any) any {
+func (m *mongodb) PaginationByCursor(query bson.D, cursor *string, pageSize int64, sort bson.D, entity any) (context.Context, *mongo.Cursor) {
 	opts := &options.FindOptions{}
 	opts.SetLimit(pageSize)
 	if len(*cursor) > 0 {
 		objectID, _ := primitive.ObjectIDFromHex(*cursor)
 		query = bson.D{{"_id", bson.D{{"$lt", objectID}}}}
 	}
-	if len(sort) <= 0 {
-		sort = bson.D{{"_id", -1}}
+
+	finalSort := bson.D{{"_id", -1}}
+	if len(sort) > 0 {
+		for _, s := range sort {
+			finalSort = append(finalSort, s)
+		}
 	}
-	opts.SetSort(sort)
+	opts.SetSort(finalSort)
 	return m.Find(query, entity, opts)
 }
 
 // 页码翻页
 //
 // query-查询条件; page-当前页码; pageSize-分页大小; sort-排序方式; entity-数据实体
-func (m *mongodb) PaginationByPage(query bson.D, page, pageSize int64, sort bson.D, entity any) any {
+func (m *mongodb) PaginationByPage(query bson.D, page, pageSize int64, sort bson.D, entity any) (context.Context, *mongo.Cursor) {
 	opts := &options.FindOptions{}
 	opts.SetLimit(pageSize)
 	opts.SetSkip((page - 1) * pageSize)

@@ -7,7 +7,7 @@ import (
 
 type Admin struct {
 	Id            primitive.ObjectID `bson:"_id"`
-	Email         string             `bson:"email" index:"{'name':'email','keys':{'email':-1,'roleId':-1,'createTime':-1,'lastLoginIp':-1},'unique':true}"`
+	Email         string             `bson:"email" index:"{'name':'email','keys':{'email':-1},'unique':true}"`
 	Username      string             `bson:"username"`
 	Password      string             `bson:"password"`
 	Status        string             `bson:"status"`
