@@ -9,8 +9,9 @@ import (
 )
 
 type Jwt struct {
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
+	privateKey    *rsa.PrivateKey
+	publicKey     *rsa.PublicKey
+	signingMethod *jwt.SigningMethodRSA
 }
 
 type jwtClaims struct {
@@ -20,9 +21,9 @@ type jwtClaims struct {
 
 // 初始化一个带有证书的jwt实例
 //
-// publicCertPath-公钥证书地址; privateCertPath-私钥证书地址
-func NewJwt(publicCertPath, privateCertPath string) *Jwt {
-	j := &Jwt{}
+// publicCertPath-公钥证书地址; privateCertPath-私钥证书地址; signingMethod-加密算法
+func NewJwt(publicCertPath, privateCertPath string, signingMethod *jwt.SigningMethodRSA) *Jwt {
+	j := &Jwt{signingMethod: signingMethod}
 
 	privateKeyBytes, err := os.ReadFile(privateCertPath)
 	if err != nil {
@@ -54,7 +55,7 @@ func NewJwt(publicCertPath, privateCertPath string) *Jwt {
 func (j *Jwt) Encrypt(data any, duration int64) (string, error) {
 	b, _ := json.Marshal(data)
 	claims := jwtClaims{Data: string(b), StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().Unix() + duration}}
-	token := jwt.NewWithClaims(jwt.SigningMethodRS384, claims)
+	token := jwt.NewWithClaims(j.signingMethod, claims)
 	tokenString, err := token.SignedString(j.privateKey)
 	if err != nil {
 		return "", err
