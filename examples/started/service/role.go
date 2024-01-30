@@ -30,7 +30,7 @@ func init() {
 // 角色列表
 //
 // name-角色名称搜索;page-当前页码;pageSize-页面大小
-func (r *roleService) RoleList(name string, page, pageSize int64) []entity.Role {
+func (r *roleService) RoleList(name string, page, pageSize int64) []*entity.Role {
 	query := make(bson.D, 0)
 	if len(name) > 0 {
 		query = append(query, bson.E{Key: "name", Value: name})

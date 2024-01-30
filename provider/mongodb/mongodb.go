@@ -147,12 +147,12 @@ func EnsureIndex[T any](entity T, connectionName ...string) {
 // 反序列化mongodb的数据到指定是数据实体
 //
 // ctx-上下文; cursor-mongodb返回的游标; entity-数据实体
-func DecodeList[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []T {
+func DecodeList[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []*T {
 	defer cursor.Close(ctx)
-	result := make([]T, 0)
+	result := make([]*T, 0)
 	for cursor.Next(ctx) {
 		cursor.Decode(&entity)
-		result = append(result, entity)
+		result = append(result, &entity)
 	}
 	return result
 }
@@ -160,8 +160,13 @@ func DecodeList[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []T 
 // 反序列化mongodb的数据到指定是数据实体
 //
 // ctx-上下文; cursor-mongodb返回的游标; entity-数据实体
-func DecodeOne[T any](ctx context.Context, cursor *mongo.Cursor, entity T) T {
-	return arrayutil.First(DecodeList(ctx, cursor, entity))
+func DecodeOne[T any](ctx context.Context, cursor *mongo.Cursor, entity T) *T {
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		cursor.Decode(&entity)
+		return &entity
+	}
+	return nil
 }
 
 // 插入单条数据
