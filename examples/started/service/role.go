@@ -37,7 +37,7 @@ func (r *roleService) RoleList(name string, page, pageSize int64) []entity.Role 
 	}
 
 	ctx, cursor := mongo.PaginationByPage(query, page, pageSize, make(bson.D, 0), entity.Role{})
-	return mongodb.Decode(ctx, cursor, entity.Role{})
+	return mongodb.DecodeList(ctx, cursor, entity.Role{})
 }
 
 // 创建角色
