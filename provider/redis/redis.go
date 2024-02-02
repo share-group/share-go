@@ -7,7 +7,6 @@ import (
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/systemutil"
-	"os"
 	"strconv"
 	"sync"
 )
@@ -29,8 +28,7 @@ func init() {
 		db, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf.(map[string]any), "host", "0")))
 
 		if _, ok := connectionMap.Load(name); ok {
-			logger.DPanic("only one default connection is allowed")
-			os.Exit(1)
+			logger.Fatal("only one default connection is allowed")
 		}
 		connectionMap.Store(name, newRedis(host, password, db))
 	}
@@ -39,10 +37,9 @@ func init() {
 func newRedis(host, password string, db int) *redisObj {
 	redisClient = redis.NewClient(&redis.Options{Addr: host, Password: password, DB: db})
 	ping, err := redisClient.Ping().Result()
-	logger.Info(fmt.Sprintf("redis connect %v %s ...", host, systemutil.If(ping == "PONG", "success", "fail")))
+	logger.Info("redis connect %v %s ...", host, systemutil.If(ping == "PONG", "success", "fail"))
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("%v", err))
-		os.Exit(1)
+		logger.Fatal("%v", err)
 	}
 	return &redisObj{Client: redisClient}
 }

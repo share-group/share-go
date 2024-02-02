@@ -38,7 +38,7 @@ func PrintRequestLog(c echo.Context) {
 		c.Set("request", requestBytes)
 	}
 
-	logger.Info(fmt.Sprintf("request %v, method: %v, data: %v, size: %v Byte", c.Request().URL.Path, c.Request().Method, string(requestBytes), len(requestBytes)))
+	logger.Info("request %v, method: %v, data: %v, size: %v Byte", c.Request().URL.Path, c.Request().Method, string(requestBytes), len(requestBytes))
 }
 
 func SaveStringRequestLog(c echo.Context) {
@@ -83,12 +83,12 @@ func SaveStringRequestLog(c echo.Context) {
 	// 测试环境打印详细点，正式环境打印简单点
 	if loggingEnable {
 		if reflect.DeepEqual(systemutil.Env(), "production") {
-			logger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
+			logger.Info("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec)
 		} else {
 			if loggingPretty {
 				c.Set("response", responseBytes)
 			}
-			logger.Info(fmt.Sprintf("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec))
+			logger.Info("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec)
 		}
 	}
 }
@@ -139,14 +139,14 @@ func SaveJSONRequestLog(c echo.Context) {
 	// 测试环境打印详细点，正式环境打印简单点
 	if loggingEnable {
 		if reflect.DeepEqual(systemutil.Env(), "production") {
-			logger.Info(fmt.Sprintf("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec))
+			logger.Info("%v %v %v %v", c.Response().Status, c.Request().Method, c.Request().URL.Path, exec)
 		} else {
 			if loggingPretty {
 				json.Unmarshal(responseBytes, &response)
 				responseBytes, _ = json.MarshalIndent(response, "", "    ")
 				c.Set("response", responseBytes)
 			}
-			logger.Info(fmt.Sprintf("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec))
+			logger.Info("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec)
 		}
 	}
 }

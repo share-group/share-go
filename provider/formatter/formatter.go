@@ -20,7 +20,7 @@ func PlaintextResponseFormatter(fun func(c echo.Context) any) echo.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				var response any
-				logger.Info(fmt.Sprintf("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack())))
+				logger.Info("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack()))
 				if reflect.DeepEqual(reflect.TypeOf(err).String(), "errors.BusinessException") {
 					e := err.(exception.BusinessException)
 					response = e.Message
@@ -48,7 +48,7 @@ func JSONResponseFormatter(fun func(c echo.Context) any) echo.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				var response map[string]any
-				logger.Info(fmt.Sprintf("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack())))
+				logger.Info("\n%v\n%v\n", fmt.Sprint(err), string(debug.Stack()))
 				if reflect.DeepEqual(reflect.TypeOf(err).String(), "errors.BusinessException") {
 					e := err.(exception.BusinessException)
 					response = map[string]any{"code": e.Code, "message": e.Message}

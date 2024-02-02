@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 )
 
 var viperConfig *viper.Viper
@@ -24,7 +25,7 @@ func init() {
 	}
 
 	// 获取程序当前的根目录
-	viperConfig.Set("root", cmd)
+	viperConfig.Set("root", strings.ReplaceAll(cmd, "\\", "/"))
 }
 
 // 获取程序当前运行的根目录

@@ -11,6 +11,7 @@ import (
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/stringutil"
 	"github.com/share-group/share-go/util/systemutil"
+	"math"
 	"reflect"
 	"regexp"
 	"strings"
@@ -74,9 +75,18 @@ func mappedHandler(e *echo.Echo) {
 		reflectType := reflect.TypeOf(h)
 		for i := 0; i < reflectType.NumMethod(); i++ {
 			m := reflectType.Method(i)
-			var paramType reflect.Type
-			if m.Type.NumIn() > 1 {
-				paramType = m.Type.In(1)
+
+			// 如果注入了 echo.Context ，则把 echo.Context 反射进去：否则不需要
+			paramIndex := math.MinInt32
+			hasEchoContextIndex := false
+			for j := 1; j < m.Type.NumIn(); j++ {
+				tmpType := m.Type.In(j)
+				if reflect.DeepEqual("echo.Context", tmpType.String()) {
+					hasEchoContextIndex = true
+				} else {
+					paramIndex = j
+					break
+				}
 			}
 
 			// 约定路由规则，HttpMethod+接口名，例如：GetCaptcha，其实就是 GET /captcha；PostLogin，其实就是 POST /login，如果没有指定HttpMethod的话默认POST
@@ -101,12 +111,20 @@ func mappedHandler(e *echo.Echo) {
 			if !strings.HasSuffix(url, midUrl) {
 				url = fmt.Sprintf("%s/%s/%s/%s", prefix, module, midUrl, apiName)
 			}
-			logger.Info(fmt.Sprintf("%s %s %v", method, strings.ReplaceAll(url, prefix, ""), &m.Func))
+			logger.Info("%s %s %v", method, strings.ReplaceAll(url, prefix, ""), &m.Func)
+
+			var paramType reflect.Type
+			if paramIndex != math.MinInt32 {
+				paramType = m.Type.In(paramIndex)
+			}
 
 			// 注册路由方法
 			methodFunMap[method](url, responseFormatter(func(c echo.Context) any {
 				c.Set("requestTime", time.Now())
 				callParam := []reflect.Value{obj}
+				if hasEchoContextIndex {
+					callParam = append(callParam, reflect.ValueOf(c))
+				}
 				body := validator.ValidateParameters(c, paramType)
 				if body != nil {
 					callParam = append(callParam, reflect.ValueOf(body))
@@ -138,6 +156,6 @@ func start(e *echo.Echo) {
 	if port <= 0 {
 		logger.Fatal(fmt.Sprintf("invalid port: %d", port))
 	}
-	logger.Info(fmt.Sprintf("%s server started on 0.0.0.0:%d", config.GetString("application.name"), port))
+	logger.Info("%s server started on 0.0.0.0:%d", config.GetString("application.name"), port)
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
 }

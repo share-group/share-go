@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,10 @@ import (
 const frameworkName = "share-go"
 
 var callerAliasMap sync.Map
+
+type Logger struct {
+	zapLogger *zap.Logger
+}
 
 func init() {
 	cmd, _ := os.Getwd()
@@ -44,11 +49,20 @@ func init() {
 		EncodeDuration: zapcore.MillisDurationEncoder,
 		EncodeCaller: func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 			prefix := strings.ReplaceAll(caller.FullPath(), strings.ReplaceAll(cmd, "\\", "/"), "")
-			callerAlias, _ := callerAliasMap.Load(caller.FullPath()[0:strings.LastIndex(caller.FullPath(), ":")])
+			stack := strings.Split(string(debug.Stack()), "\n")
+			lineNumber := 0
+			if len(stack) >= 17 {
+				one := strings.Split(strings.TrimSpace(stack[16]), " ")
+				if len(one) > 1 {
+					prefix = strings.TrimSpace(one[0])
+					lineNumber, _ = strconv.Atoi(strings.TrimSpace(prefix[strings.LastIndex(prefix, ":")+1:]))
+				}
+			}
+			callerAlias, _ := callerAliasMap.Load(prefix[0:strings.LastIndex(prefix, ":")])
 			if callerAlias != nil && len(callerAlias.(string)) > 0 {
 				prefix = callerAlias.(string)
 			} else {
-				if strings.Contains(prefix, frameworkName) {
+				if !strings.HasPrefix(prefix, config.GetRootDir()) {
 					atvIndex := strings.Index(strings.ReplaceAll(prefix, frameworkName, " "), "@v")
 					if atvIndex > -1 {
 						prefix = prefix[atvIndex:]
@@ -59,11 +73,17 @@ func init() {
 					}
 					prefix = prefix[:strings.LastIndex(prefix, ".")]
 					prefix = arrayutil.Last(strings.Split(prefix, "."))
-					prefix = fmt.Sprintf("share.go.%s", prefix)
+					prefix = fmt.Sprintf("share.go.%s:%d", prefix, lineNumber)
 				} else {
+					prefix = strings.TrimSpace(strings.ReplaceAll(prefix, config.GetRootDir(), ""))
+					one := strings.Split(prefix, " ")
+					if len(one) > 1 {
+						prefix = strings.TrimSpace(one[0])
+					}
 					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
 					lastDotIndex := strings.LastIndex(prefix, ".")
-					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), arrayutil.Last(strings.Split(caller.Function, ".")), strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
+					functionName := strings.TrimSpace(stack[15][strings.LastIndex(stack[15], ".")+1 : strings.LastIndex(stack[15], "(")])
+					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), functionName, strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
 				}
 			}
 
@@ -83,15 +103,40 @@ func init() {
 	zap.ReplaceGlobals(zap.New(core, zap.AddCaller()))
 }
 
-func GetLogger(name ...string) *zap.Logger {
+func GetLogger(name ...string) *Logger {
 	// 支持日志头重命名，默认是文件名和所在代码行数
 	if len(name) > 0 && len(name[0]) > 0 {
 		stackArray := strings.Split(string(debug.Stack()), "\n")
 		caller := strings.TrimSpace(stackArray[6])
-		caller = caller[0:strings.LastIndex(caller, ":")]
-		callerAliasMap.Store(caller, name[0])
+		caller = strings.TrimSpace(caller[0:strings.LastIndex(caller, ":")])
+		callerAliasMap.Store(caller, strings.TrimSpace(name[0]))
 	}
-	return zap.L()
+	return &Logger{zapLogger: zap.L()}
+}
+
+func (o *Logger) Debug(msg string, args ...any) {
+	o.zapLogger.Debug(fmt.Sprintf(msg, args...))
+}
+
+func (o *Logger) Info(msg string, args ...any) {
+	o.zapLogger.Info(fmt.Sprintf(msg, args...))
+}
+
+func (o *Logger) Warn(msg string, args ...any) {
+	o.zapLogger.Warn(fmt.Sprintf(msg, args...))
+}
+
+func (o *Logger) Error(msg string, args ...any) {
+	o.zapLogger.Error(fmt.Sprintf(msg, args...))
+}
+
+func (o *Logger) Panic(msg string, args ...any) {
+	o.zapLogger.Panic(fmt.Sprintf(msg, args...))
+}
+
+func (o *Logger) Fatal(msg string, args ...any) {
+	o.zapLogger.Fatal(fmt.Sprintf(msg, args...))
+	os.Exit(0)
 }
 
 func getFirstLetter(str string) string {

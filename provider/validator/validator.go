@@ -29,11 +29,13 @@ func ValidateParameters(c echo.Context, paramType reflect.Type) any {
 	json.Unmarshal([]byte(query), &body)
 	request, _ := json.Marshal(body)
 	c.Set("request", request)
-	if enable {
-		if err := _validator.(*validator.Validate).Struct(body); err != nil {
-			panic(exception.NewBusinessException(10002, processErr(body, err)))
-			return nil
-		}
+	if !enable {
+		return body
+	}
+
+	if err := _validator.(*validator.Validate).Struct(body); err != nil {
+		panic(exception.NewBusinessException(10002, processErr(body, err)))
+		return nil
 	}
 	return body
 }

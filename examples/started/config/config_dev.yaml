@@ -12,7 +12,7 @@ server:
 
   # 数据验证器配置
   validator:
-    enable: true
+    enable: false
 
   # 系统日志打印
   logging:

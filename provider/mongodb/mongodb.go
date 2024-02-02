@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -36,8 +35,7 @@ func init() {
 		uri := fmt.Sprintf("%v", maputil.GetValueFromMap(conf.(map[string]any), "uri", ""))
 
 		if _, ok := connectionMap.Load(name); ok {
-			logger.DPanic("only one default connection is allowed")
-			os.Exit(1)
+			logger.Fatal("only one default connection is allowed")
 		}
 		connectionMap.Store(name, newMongodb(name, uri))
 	}
@@ -50,16 +48,14 @@ func newMongodb(name string, uri string) *mongodb {
 	// 连接到MongoDB
 	client, err := mongo.Connect(ctx, co)
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("%v", err))
-		os.Exit(1)
+		logger.Fatal("%v", err)
 	}
 	// 检查连接
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("%v", err))
-		os.Exit(1)
+		logger.Fatal("%v", err)
 	}
-	logger.Info(fmt.Sprintf("mongodb connect %s success ...", uri))
+	logger.Info("mongodb connect %s success ...", uri)
 	return &mongodb{DB: client.Database(dbName(uri))}
 }
 
@@ -140,7 +136,7 @@ func EnsureIndex[T any](entity T, connectionName ...string) {
 
 		key_s, _ := json.Marshal(indexModel.Keys)
 		option_s, _ := json.Marshal(indexModel.Options)
-		logger.Info(fmt.Sprintf("collection [%s] create index: %v, index options: %v", collection, string(key_s), jsonutil.RemoveNullValues(string(option_s))))
+		logger.Info("collection [%s] create index: %v, index options: %v", collection, string(key_s), jsonutil.RemoveNullValues(string(option_s)))
 	}
 }
 
