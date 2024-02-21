@@ -55,7 +55,11 @@ func newMongodb(name string, uri string) *mongodb {
 	if err != nil {
 		logger.Fatal("%v", err)
 	}
-	logger.Info("mongodb connect %s success ...", uri)
+	if co.Auth == nil {
+		logger.Info("mongodb connect %s success ...", uri)
+	} else {
+		logger.Info("mongodb connect mongodb://*****:*****@%s/%s success ...", co.Hosts[0], dbName(uri))
+	}
 	return &mongodb{DB: client.Database(dbName(uri))}
 }
 

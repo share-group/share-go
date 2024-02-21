@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"crypto/rsa"
+	"embed"
 	"encoding/json"
 	"github.com/golang-jwt/jwt"
 	"os"
@@ -37,6 +38,36 @@ func NewJwt(publicCertPath, privateCertPath string, signingMethod *jwt.SigningMe
 
 	// 从文件加载公钥
 	publicKeyBytes, err := os.ReadFile(publicCertPath)
+	if err != nil {
+		panic(err)
+	}
+
+	j.publicKey, err = jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return j
+}
+
+// 初始化一个带有证书的jwt实例
+//
+// publicCertPath-公钥证书地址; privateCertPath-私钥证书地址; signingMethod-加密算法
+func NewJwtWithEmbed(publicCertPath, privateCertPath embed.FS, signingMethod *jwt.SigningMethodRSA) *Jwt {
+	j := &Jwt{signingMethod: signingMethod}
+
+	privateKeyBytes, err := publicCertPath.ReadFile("rsa_public_key.pem")
+	if err != nil {
+		panic(err)
+	}
+
+	j.privateKey, err = jwt.ParseRSAPrivateKeyFromPEM(privateKeyBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	// 从文件加载公钥
+	publicKeyBytes, err := privateCertPath.ReadFile("rsa_private_key.pem")
 	if err != nil {
 		panic(err)
 	}
