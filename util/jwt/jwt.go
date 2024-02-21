@@ -56,7 +56,7 @@ func NewJwt(publicCertPath, privateCertPath string, signingMethod *jwt.SigningMe
 func NewJwtWithEmbed(publicCertPath, privateCertPath embed.FS, signingMethod *jwt.SigningMethodRSA) *Jwt {
 	j := &Jwt{signingMethod: signingMethod}
 
-	privateKeyBytes, err := publicCertPath.ReadFile("rsa_public_key.pem")
+	privateKeyBytes, err := privateCertPath.ReadFile("rsa_private_key.pem")
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +67,7 @@ func NewJwtWithEmbed(publicCertPath, privateCertPath embed.FS, signingMethod *jw
 	}
 
 	// 从文件加载公钥
-	publicKeyBytes, err := privateCertPath.ReadFile("rsa_private_key.pem")
+	publicKeyBytes, err := publicCertPath.ReadFile("rsa_public_key.pem")
 	if err != nil {
 		panic(err)
 	}
