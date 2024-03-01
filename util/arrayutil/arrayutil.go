@@ -1,6 +1,8 @@
 package arrayutil
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // 取数组第一位元素
 //
@@ -30,4 +32,21 @@ func Contains[T any](arr []T, element T) bool {
 		}
 	}
 	return false
+}
+
+/**
+ * 对象数组元素去重
+ * @param array 对象数组
+ */
+func Uniq[T comparable](array []T) []T {
+	newArray := make([]T, 0)
+	encountered := map[T]bool{}
+
+	for _, v := range array {
+		if encountered[v] != true {
+			encountered[v] = true
+			newArray = append(newArray, v)
+		}
+	}
+	return newArray
 }
