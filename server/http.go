@@ -22,6 +22,8 @@ var banner = ""
 
 var handlers = make([]any, 0)
 
+var middlewares = make([]func(next echo.HandlerFunc) echo.HandlerFunc, 0)
+
 var responseFormatter func(fun func(c echo.Context) any) echo.HandlerFunc
 var logger = loggerFactory.GetLogger()
 
@@ -35,6 +37,11 @@ func (*Server) SetBanner(bannerString string) {
 // 设置处理器入口
 func (*Server) SetHandlers(handler any) {
 	handlers = append(handlers, handler)
+}
+
+// 设置中间件
+func (*Server) SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc) {
+	middlewares = append(middlewares, middleware)
 }
 
 // 设置返回数据格式器
@@ -51,6 +58,9 @@ func (*Server) Run() {
 }
 
 func addMiddleware(e *echo.Echo) {
+	for _, m := range middlewares {
+		e.Use(m)
+	}
 }
 
 func mappedHandler(e *echo.Echo) {
