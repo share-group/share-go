@@ -11,6 +11,7 @@ func main() {
 	s := server.NewHttpServer()
 	s.SetResponseFormatter(formatter.JSONResponseFormatter)
 	s.SetHandlers(account.AdminController)
+	s.SetHandlers(account.RoleController)
 	s.SetHandlers(system.CaptchaController)
 	s.Run()
 }

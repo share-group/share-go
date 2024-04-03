@@ -22,7 +22,7 @@ var loggingMongodb = mongodb.GetInstance("logging")
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志
-	if !loggingEnable || reflect.DeepEqual(systemutil.Env(), "production") {
+	if !loggingEnable || reflect.DeepEqual(systemutil.Env(), "prod") || reflect.DeepEqual(systemutil.Env(), "production") {
 		return
 	}
 
