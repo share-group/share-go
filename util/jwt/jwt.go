@@ -67,6 +67,9 @@ func (j *Jwt) Decrypt(data string) (map[string]any, error) {
 	}
 
 	result := make(map[string]any)
+	claimsBytes, _ := json.Marshal(token.Claims)
+	err = json.Unmarshal(claimsBytes, &result)
+	delete(result, "data")
 	err = json.Unmarshal([]byte(token.Claims.(*jwtClaims).Data), &result)
 	return result, err
 }
