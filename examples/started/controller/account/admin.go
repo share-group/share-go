@@ -3,7 +3,7 @@ package account
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/examples/started/protocol"
-	"log"
+	"github.com/share-group/share-go/examples/started/service"
 )
 
 type adminController struct{}
@@ -14,7 +14,6 @@ func newAdminController() *adminController {
 	return &adminController{}
 }
 
-func (a *adminController) Login(c echo.Context, r *protocol.RequestLogin) int {
-	log.Println(r, c.RealIP())
-	return 1
+func (a *adminController) Login(c echo.Context, r *protocol.RequestLogin) any {
+	return service.SystemService.GetGlobalConfig()
 }

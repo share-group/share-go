@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jinzhu/copier"
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/util/arrayutil"
@@ -151,8 +152,10 @@ func DecodeList[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []*T
 	defer cursor.Close(ctx)
 	result := make([]*T, 0)
 	for cursor.Next(ctx) {
-		cursor.Decode(&entity)
-		result = append(result, &entity)
+		var element T
+		copier.Copy(element, entity)
+		cursor.Decode(&element)
+		result = append(result, &element)
 	}
 	return result
 }
@@ -163,8 +166,10 @@ func DecodeList[T any](ctx context.Context, cursor *mongo.Cursor, entity T) []*T
 func DecodeOne[T any](ctx context.Context, cursor *mongo.Cursor, entity T) *T {
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		cursor.Decode(&entity)
-		return &entity
+		var element T
+		copier.Copy(element, entity)
+		cursor.Decode(&element)
+		return &element
 	}
 	return nil
 }
