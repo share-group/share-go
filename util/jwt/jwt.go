@@ -42,10 +42,10 @@ func NewJwt(publicKeyBytes, privateKeyBytes []byte, signingMethod *jwt.SigningMe
 
 // 加密数据
 //
-// data-待加密的数据; duration-有效时长(单位：毫秒)
+// data-待加密的数据; duration-有效时长(单位：秒)
 func (j *Jwt) Encrypt(data any, duration int64) (string, error) {
 	b, _ := json.Marshal(data)
-	claims := jwtClaims{Data: string(b), StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().UnixMilli() + duration}}
+	claims := jwtClaims{Data: string(b), StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().Unix() + duration}}
 	token := jwt.NewWithClaims(j.signingMethod, claims)
 	tokenString, err := token.SignedString(j.privateKey)
 	if err != nil {
