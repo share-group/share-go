@@ -281,6 +281,18 @@ func (m *mongodb) DeleteMany(entity any, query bson.D, opts ...*options.DeleteOp
 	return updateResult
 }
 
+// 统计总条数
+//
+// query-查询条件; entity-数据实体; opts-统计选项
+func (m *mongodb) Count(query bson.D, entity any, opts ...*options.CountOptions) (context.Context, int64) {
+	ctx := context.Background()
+	classType := reflect.TypeOf(entity)
+	c := m.DB.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	count, err := c.CountDocuments(ctx, query, opts...)
+	throwErrorIfNotNil(err)
+	return ctx, count
+}
+
 // 查询多条数据
 //
 // query-查询条件; entity-数据实体; opts-查询选项
@@ -326,7 +338,7 @@ func (m *mongodb) PaginationByCursor(query bson.D, cursor *string, pageSize int6
 // 页码翻页
 //
 // query-查询条件; page-当前页码; pageSize-分页大小; sort-排序方式; entity-数据实体
-func (m *mongodb) PaginationByPage(query bson.D, page, pageSize int64, sort bson.D, entity any) (context.Context, *mongo.Cursor) {
+func (m *mongodb) PaginationByPage(query bson.D, page, pageSize int64, sort bson.D, entity any) (context.Context, *mongo.Cursor, int64) {
 	opts := &options.FindOptions{}
 	opts.SetLimit(pageSize)
 	opts.SetSkip((page - 1) * pageSize)
@@ -334,5 +346,7 @@ func (m *mongodb) PaginationByPage(query bson.D, page, pageSize int64, sort bson
 		sort = bson.D{{"_id", -1}}
 	}
 	opts.SetSort(sort)
-	return m.Find(query, entity, opts)
+	_, total := m.Count(query, entity)
+	ctx, cursor := m.Find(query, entity, opts)
+	return ctx, cursor, total
 }

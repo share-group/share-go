@@ -5,6 +5,7 @@ import (
 	entity "github.com/share-group/share-go/examples/started/entity/account"
 	"github.com/share-group/share-go/provider/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
+	"log"
 )
 
 type roleService struct {
@@ -36,7 +37,8 @@ func (r *roleService) RoleList(name string, page, pageSize int64) []*entity.Role
 		query = append(query, bson.E{Key: "name", Value: name})
 	}
 
-	ctx, cursor := mongo.PaginationByPage(query, page, pageSize, make(bson.D, 0), entity.Role{})
+	ctx, cursor, total := mongo.PaginationByPage(query, page, pageSize, make(bson.D, 0), entity.Role{})
+	log.Println("total: ", total)
 	return mongodb.DecodeList(ctx, cursor, entity.Role{})
 }
 
