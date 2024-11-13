@@ -219,10 +219,10 @@ func (m *Mongodb[T]) doUpdateMany(entity any, query, update bson.D, operator str
 
 // 删除单条数据
 //
-// entity-数据实体; query-查询条件; opts-数据删除选项
-func (m *Mongodb[T]) DeleteOne(entity any, query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+// query-查询条件; opts-数据删除选项
+func (m *Mongodb[T]) DeleteOne(query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
 	ctx := context.Background()
-	classType := reflect.TypeOf(entity)
+	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
 	updateResult, err := c.DeleteOne(ctx, query, opts...)
 	throwErrorIfNotNil(err)
@@ -231,10 +231,10 @@ func (m *Mongodb[T]) DeleteOne(entity any, query bson.D, opts ...*options.Delete
 
 // 删除多条数据
 //
-// entity-数据实体; query-查询条件; opts-数据删除选项
-func (m *Mongodb[T]) DeleteMany(entity any, query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+// query-查询条件; opts-数据删除选项
+func (m *Mongodb[T]) DeleteMany(query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
 	ctx := context.Background()
-	classType := reflect.TypeOf(entity)
+	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
 	updateResult, err := c.DeleteMany(ctx, query, opts...)
 	throwErrorIfNotNil(err)
