@@ -179,35 +179,35 @@ func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
 
 // 更新单条数据
 //
-// entity-数据实体; id-主键id; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateOne(entity any, id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+// id-主键id; update-需要更新的数据; opts-数据更新选项
+func (m *Mongodb[T]) UpdateOne(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
-	return m.UpdateMany(entity, bson.D{{"_id", objectID}}, update, opts...)
+	return m.UpdateMany(bson.D{{"_id", objectID}}, update, opts...)
 }
 
 // 更新多条数据
 //
-// entity-数据实体; query-查询条件; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateMany(entity any, query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
-	return m.doUpdateMany(entity, query, update, "$set", opts...)
+//	query-查询条件; update-需要更新的数据; opts-数据更新选项
+func (m *Mongodb[T]) UpdateMany(query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+	return m.doUpdateMany(query, update, "$set", opts...)
 }
 
 // 单条数据的字段自增
 //
-// entity-数据实体; id-主键id; update-需要自增的数据; opts-数据更新选项
-func (m *Mongodb[T]) IncOne(entity any, id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+// id-主键id; update-需要自增的数据; opts-数据更新选项
+func (m *Mongodb[T]) IncOne(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
-	return m.doUpdateMany(entity, bson.D{{"_id", objectID}}, update, "$inc", opts...)
+	return m.doUpdateMany(bson.D{{"_id", objectID}}, update, "$inc", opts...)
 }
 
 // 更新多条数据
 //
-// entity-数据实体; query-查询条件; update-需要更新的数据; operator-操作符; opts-数据更新选项
-func (m *Mongodb[T]) doUpdateMany(entity any, query, update bson.D, operator string, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+// query-查询条件; update-需要更新的数据; operator-操作符; opts-数据更新选项
+func (m *Mongodb[T]) doUpdateMany(query, update bson.D, operator string, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	ctx := context.Background()
-	classType := reflect.TypeOf(entity)
+	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
 	updateResult, err := c.UpdateMany(ctx, query, bson.D{
 		{operator, update},

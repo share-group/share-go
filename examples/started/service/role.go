@@ -24,7 +24,7 @@ func newRoleService() *roleService {
 var mongo = mongodb.GetInstance(entity.Role{}, "dashboard")
 
 func init() {
-	mongo.UpdateOne(entity.Role{}, "65af4b58bf294f8c9745c7d7", bson.D{{"index", 431}})
+	mongo.UpdateOne("65af4b58bf294f8c9745c7d7", bson.D{{"index", 431}})
 	roleList := RoleService.RoleList("", 1, 1)
 	if len(roleList) > 0 {
 		return
