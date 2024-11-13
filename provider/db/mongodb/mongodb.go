@@ -244,13 +244,13 @@ func (m *Mongodb[T]) DeleteMany(entity any, query bson.D, opts ...*options.Delet
 // 统计总条数
 //
 // query-查询条件; opts-统计选项
-func (m *Mongodb[T]) Count(query bson.D, opts ...*options.CountOptions) (context.Context, int64) {
+func (m *Mongodb[T]) Count(query bson.D, opts ...*options.CountOptions) int64 {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
 	count, err := c.CountDocuments(ctx, query, opts...)
 	throwErrorIfNotNil(err)
-	return ctx, count
+	return count
 }
 
 // 查询多条数据
@@ -268,10 +268,10 @@ func (m *Mongodb[T]) Find(query bson.D, opts ...*options.FindOptions) []*T {
 // 查询单条数据
 //
 // query-查询条件; entity-数据实体
-func (m *Mongodb[T]) FindOne(query bson.D) []*T {
+func (m *Mongodb[T]) FindOne(query bson.D) *T {
 	opts := &options.FindOptions{}
 	opts.SetLimit(1)
-	return m.Find(query, opts)
+	return arrayutil.First(m.Find(query, opts))
 }
 
 // 游标翻页
@@ -306,8 +306,7 @@ func (m *Mongodb[T]) PaginationByPage(query bson.D, page, pageSize int64, sort b
 		sort = bson.D{{"_id", -1}}
 	}
 	opts.SetSort(sort)
-	_, total := m.Count(query)
-	return m.Find(query, opts), total
+	return m.Find(query, opts), m.Count(query)
 }
 
 func dbName(uri string) string {
@@ -338,18 +337,4 @@ func (m *Mongodb[T]) decodeList(ctx context.Context, cursor *mongo.Cursor) []*T 
 		result = append(result, &element)
 	}
 	return result
-}
-
-// 反序列化mongodb的数据到指定是数据实体
-//
-// ctx-上下文; cursor-mongodb返回的游标
-func (m *Mongodb[T]) decodeOne(ctx context.Context, cursor *mongo.Cursor) *T {
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var element T
-		copier.Copy(element, m.entity)
-		cursor.Decode(&element)
-		return &element
-	}
-	return nil
 }
