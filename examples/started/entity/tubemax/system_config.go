@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/share-group/share-go/provider/mongodb"
+	"github.com/share-group/share-go/provider/db"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -14,5 +14,5 @@ type SystemConfig struct {
 }
 
 func init() {
-	mongodb.EnsureIndex(SystemConfig{}, "tubemax")
+	db.RegisterRepository(SystemConfig{}, "tubemax")
 }

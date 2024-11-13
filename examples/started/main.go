@@ -7,11 +7,16 @@ import (
 	"github.com/share-group/share-go/server"
 )
 
+// 引入要暴露的控制器
+var controllers = []any{
+	account.AdminController,
+	account.RoleController,
+	system.CaptchaController,
+}
+
 func main() {
 	s := server.NewHttpServer()
 	s.SetResponseFormatter(formatter.JSONResponseFormatter)
-	s.SetHandlers(account.AdminController)
-	s.SetHandlers(account.RoleController)
-	s.SetHandlers(system.CaptchaController)
+	s.RegisterControllers(controllers...)
 	s.Run()
 }

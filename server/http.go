@@ -34,9 +34,9 @@ func (*Server) SetBanner(bannerString string) {
 	banner = bannerString
 }
 
-// 设置处理器入口
-func (*Server) SetHandlers(handler any) {
-	handlers = append(handlers, handler)
+// 设置控制器入口
+func (*Server) RegisterControllers(controllers ...any) {
+	handlers = append(handlers, controllers...)
 }
 
 // 设置中间件
@@ -166,6 +166,6 @@ func start(e *echo.Echo) {
 	if port <= 0 {
 		logger.Fatal(fmt.Sprintf("invalid port: %d", port))
 	}
-	logger.Info("%s server started on 0.0.0.0:%d", config.GetString("application.name"), port)
+	logger.Info("%s server started on 0.0.0.0:%d in %s environment", config.GetString("application.name"), port, config.GetENV())
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
 }

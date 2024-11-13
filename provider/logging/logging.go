@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/provider/config"
+	"github.com/share-group/share-go/provider/db/mongodb"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
-	"github.com/share-group/share-go/provider/mongodb"
+	"github.com/share-group/share-go/util/arrayutil"
+	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/systemutil"
 	"go.mongodb.org/mongo-driver/bson"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -18,7 +21,13 @@ import (
 var logger = loggerFactory.GetLogger()
 var loggingEnable = config.GetBool("server.logging.enable")
 var loggingPretty = config.GetBool("server.logging.pretty")
-var loggingMongodb = mongodb.GetInstance("logging")
+var loggingConf = arrayutil.First(arrayutil.Filter(config.GetList("data.mongodb"), func(item any) bool {
+	return reflect.DeepEqual("logging", fmt.Sprintf("%v", maputil.GetValueFromMap(item.(map[string]any), "name", "default")))
+}))
+var loggingConnectionName = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "name", "default"))
+var loggingConnectionNameURI = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "uri", ""))
+var loggingConnectionTimeout, _ = strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "timeout", "0")))
+var loggingMongodb = mongodb.ConnectMongodb(loggingConnectionName, loggingConnectionNameURI, loggingConnectionTimeout)
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志
@@ -77,7 +86,7 @@ func SaveStringRequestLog(c echo.Context) {
 		logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
 		logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
 		logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
-		go loggingMongodb.DB.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
+		go loggingMongodb.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
 	}
 
 	// 测试环境打印详细点，正式环境打印简单点
@@ -133,7 +142,7 @@ func SaveJSONRequestLog(c echo.Context) {
 		logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
 		logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
 		logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
-		go loggingMongodb.DB.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
+		go loggingMongodb.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
 	}
 
 	// 测试环境打印详细点，正式环境打印简单点

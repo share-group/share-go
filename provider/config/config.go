@@ -28,6 +28,11 @@ func init() {
 	viperConfig.Set("root", strings.ReplaceAll(cmd, "\\", "/"))
 }
 
+// 获取程序当前运行的环境
+func GetENV() string {
+	return os.Getenv("ENV")
+}
+
 // 获取程序当前运行的根目录
 func GetRootDir() string {
 	return GetString("root")

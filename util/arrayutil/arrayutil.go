@@ -34,10 +34,7 @@ func Contains[T any](arr []T, element T) bool {
 	return false
 }
 
-/**
- * 对象数组元素去重
- * @param array 对象数组
- */
+// 对象数组元素去重
 func Uniq[T comparable](array []T) []T {
 	newArray := make([]T, 0)
 	encountered := map[T]bool{}
@@ -49,4 +46,15 @@ func Uniq[T comparable](array []T) []T {
 		}
 	}
 	return newArray
+}
+
+// 接受一个过滤条件，返回一个新数组
+func Filter[T any](arr []T, predicate func(T) bool) []T {
+	var result []T
+	for _, v := range arr {
+		if predicate(v) {
+			result = append(result, v)
+		}
+	}
+	return result
 }

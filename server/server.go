@@ -12,8 +12,8 @@ func NewHttpServer() *Server {
 type IServer interface {
 	// 设置打印banner
 	SetBanner(banner string)
-	// 设置处理器入口
-	SetHandlers(handler any)
+	// 设置控制器入口
+	RegisterControllers(controllers ...any)
 	// 设置中间件
 	SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc)
 	// 设置返回数据格式器

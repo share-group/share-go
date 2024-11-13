@@ -22,12 +22,15 @@ data:
   # 数据库配置
   mongodb:
     -
+      timeout: 5
       name: dashboard
       uri: mongodb://127.0.0.1:27017/TubeMaxDashboard
     -
+      timeout: 5
       name: logging
       uri: mongodb://127.0.0.1:27017/TubeMaxDashboard
     -
+      timeout: 5
       name: tubemax
       uri: mongodb://127.0.0.1:27017/TubeMax
 
