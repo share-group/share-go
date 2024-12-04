@@ -267,7 +267,7 @@ func (m *Mongodb[T]) Find(query bson.D, opts ...*options.FindOptions) []*T {
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
 	cursor, err := c.Find(ctx, query, opts...)
 	throwErrorIfNotNil(err)
-	return m.decodeList(ctx, cursor)
+	return m.DecodeList(ctx, cursor)
 }
 
 // 查询单条数据
@@ -332,7 +332,7 @@ func throwErrorIfNotNil(err error) {
 // 反序列化mongodb的数据到指定是数据实体
 //
 // ctx-上下文; cursor-mongodb返回的游标
-func (m *Mongodb[T]) decodeList(ctx context.Context, cursor *mongo.Cursor) []*T {
+func (m *Mongodb[T]) DecodeList(ctx context.Context, cursor *mongo.Cursor) []*T {
 	defer cursor.Close(ctx)
 	result := make([]*T, 0)
 	for cursor.Next(ctx) {
