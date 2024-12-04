@@ -134,6 +134,11 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 	}
 }
 
+// 返回最原始的mongodb连接对象
+func (m *Mongodb[T]) GetConnection() *mongo.Database {
+	return m.connection
+}
+
 // 插入单条数据
 //
 // entity-数据实体
