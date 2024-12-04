@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/share-group/share-go/constant"
+	HttpMethod "github.com/share-group/share-go/constant"
 	"github.com/share-group/share-go/provider/config"
 	"github.com/share-group/share-go/provider/formatter"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
@@ -22,6 +24,8 @@ var banner = ""
 
 var handlers = make([]any, 0)
 
+var urlMap = make(map[constant.HttpMethod][]string)
+
 var middlewares = make([]func(next echo.HandlerFunc) echo.HandlerFunc, 0)
 
 var responseFormatter func(fun func(c echo.Context) any) echo.HandlerFunc
@@ -30,26 +34,32 @@ var logger = loggerFactory.GetLogger()
 type Server struct{}
 
 // 设置打印banner
-func (*Server) SetBanner(bannerString string) {
+func (s *Server) SetBanner(bannerString string) {
 	banner = bannerString
 }
 
 // 设置控制器入口
-func (*Server) RegisterControllers(controllers ...any) {
+func (s *Server) RegisterControllers(controllers ...any) {
 	handlers = append(handlers, controllers...)
 }
 
 // 设置中间件
-func (*Server) SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc) {
+func (s *Server) SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc) {
 	middlewares = append(middlewares, middleware)
 }
 
 // 设置返回数据格式器
-func (*Server) SetResponseFormatter(formatter func(fun func(c echo.Context) any) echo.HandlerFunc) {
+func (s *Server) SetResponseFormatter(formatter func(fun func(c echo.Context) any) echo.HandlerFunc) {
 	responseFormatter = formatter
 }
 
-func (*Server) Run() {
+// 返回所有接口
+func (s *Server) UrlMap() map[constant.HttpMethod][]string {
+	return urlMap
+}
+
+// 启动服务器
+func (s *Server) Run() {
 	e := echo.New()
 	addMiddleware(e)
 	mappedHandler(e)
@@ -121,7 +131,8 @@ func mappedHandler(e *echo.Echo) {
 			if !strings.HasSuffix(url, midUrl) {
 				url = fmt.Sprintf("%s/%s/%s/%s", prefix, module, midUrl, apiName)
 			}
-			logger.Info("%s %s %v", method, strings.ReplaceAll(url, prefix, ""), &m.Func)
+			logger.Info("%s %s %v", method, url, &m.Func)
+			urlMap[HttpMethod.ValueOfHttpMethod(method)] = append(urlMap[HttpMethod.ValueOfHttpMethod(method)], url)
 
 			var paramType reflect.Type
 			if paramIndex != math.MinInt32 {

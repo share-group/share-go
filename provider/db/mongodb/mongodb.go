@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jinzhu/copier"
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/util/arrayutil"
@@ -337,7 +336,6 @@ func (m *Mongodb[T]) DecodeList(ctx context.Context, cursor *mongo.Cursor) []*T 
 	result := make([]*T, 0)
 	for cursor.Next(ctx) {
 		var element T
-		copier.Copy(element, m.entity)
 		cursor.Decode(&element)
 		result = append(result, &element)
 	}

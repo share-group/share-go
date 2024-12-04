@@ -43,6 +43,7 @@ func (r *roleService) RoleList(name string, page, pageSize int64) []*entity.Role
 
 	roleList, total := r.roleEntity.PaginationByPage(query, page, pageSize, make(bson.D, 0))
 	log.Println("total: ", total)
+	log.Println("roleList: ", roleList)
 	return roleList
 }
 
