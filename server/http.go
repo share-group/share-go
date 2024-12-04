@@ -53,11 +53,6 @@ func (s *Server) SetResponseFormatter(formatter func(fun func(c echo.Context) an
 	responseFormatter = formatter
 }
 
-// 返回所有接口
-func (s *Server) UrlMap() map[constant.HttpMethod][]string {
-	return urlMap
-}
-
 // 启动服务器
 func (s *Server) Run() {
 	e := echo.New()

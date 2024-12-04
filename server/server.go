@@ -9,6 +9,11 @@ func NewHttpServer() *Server {
 	return &Server{}
 }
 
+// 返回所有接口
+func UrlMap() map[constant.HttpMethod][]string {
+	return urlMap
+}
+
 // 服务器接口
 type IServer interface {
 	// 设置打印banner
@@ -19,8 +24,6 @@ type IServer interface {
 	SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc)
 	// 设置返回数据格式器
 	SetResponseFormatter(func(fun func(c echo.Context) any) echo.HandlerFunc)
-	// 返回所有接口
-	UrlMap() map[constant.HttpMethod][]string
 	// 启动http服务器
 	Run()
 }
