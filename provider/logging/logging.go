@@ -12,6 +12,8 @@ import (
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/systemutil"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
 	"strconv"
 	"strings"
@@ -53,11 +55,15 @@ func PrintRequestLog(c echo.Context) {
 func SaveStringRequestLog(c echo.Context) {
 	req := c.Get("request")
 	requestTime := c.Get("requestTime")
+	request := make(map[string]any)
+	var response any = make(map[string]any)
 	requestBytes := make([]byte, 0)
 	if req != nil {
 		requestBytes = req.([]byte)
 	}
 	responseBytes := c.Get("response").([]byte)
+	json.Unmarshal(requestBytes, &request)
+	json.Unmarshal(responseBytes, &response)
 	exec := time.Since(requestTime.(time.Time))
 
 	if loggingMongodb != nil {
@@ -86,7 +92,14 @@ func SaveStringRequestLog(c echo.Context) {
 		logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
 		logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
 		logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
-		go loggingMongodb.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
+
+		collectionName := fmt.Sprintf("Log_%s", time.Now().Format("200601"))
+		systemutil.Goroutine(func() { loggingMongodb.Collection(collectionName).InsertOne(context.Background(), logEntity) })
+
+		// 记录索引
+		createIndex(collectionName, "url", bson.D{{Key: "url", Value: -1}})
+		createIndex(collectionName, "machine", bson.D{{Key: "machine", Value: -1}})
+		createIndex(collectionName, "requestTime", bson.D{{Key: "requestTime", Value: -1}})
 	}
 
 	// 测试环境打印详细点，正式环境打印简单点
@@ -106,7 +119,7 @@ func SaveJSONRequestLog(c echo.Context) {
 	req := c.Get("request")
 	requestTime := c.Get("requestTime")
 	request := make(map[string]any)
-	response := make(map[string]any)
+	var response any = make(map[string]any)
 	requestBytes := make([]byte, 0)
 	if req != nil {
 		requestBytes = req.([]byte)
@@ -142,7 +155,14 @@ func SaveJSONRequestLog(c echo.Context) {
 		logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
 		logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
 		logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
-		go loggingMongodb.Collection(fmt.Sprintf("Log_%s", time.Now().Format("200601"))).InsertOne(context.Background(), logEntity)
+
+		collectionName := fmt.Sprintf("Log_%s", time.Now().Format("200601"))
+		systemutil.Goroutine(func() { loggingMongodb.Collection(collectionName).InsertOne(context.Background(), logEntity) })
+
+		// 记录索引
+		createIndex(collectionName, "url", bson.D{{Key: "url", Value: -1}})
+		createIndex(collectionName, "machine", bson.D{{Key: "machine", Value: -1}})
+		createIndex(collectionName, "requestTime", bson.D{{Key: "requestTime", Value: -1}})
 	}
 
 	// 测试环境打印详细点，正式环境打印简单点
@@ -158,4 +178,11 @@ func SaveJSONRequestLog(c echo.Context) {
 			logger.Info("response %v %v, data: %v, size: %v Byte, exec: %v", c.Request().URL.Path, c.Response().Status, string(responseBytes), len(responseBytes), exec)
 		}
 	}
+}
+
+func createIndex(collectionName, indexName string, indexes bson.D) {
+	ctx := context.Background()
+	indexModel := mongo.IndexModel{Keys: indexes}
+	indexModel.Options = options.Index().SetName(indexName).SetBackground(true)
+	systemutil.Goroutine(func() { loggingMongodb.Collection(collectionName).Indexes().CreateOne(ctx, indexModel) })
 }

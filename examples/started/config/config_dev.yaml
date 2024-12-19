@@ -24,15 +24,15 @@ data:
     -
       timeout: 5
       name: dashboard
-      uri: mongodb://127.0.0.1:27017/TubeMaxDashboard
+      uri: mongodb://127.0.0.1:27017/ShareGo
     -
       timeout: 5
       name: logging
-      uri: mongodb://127.0.0.1:27017/TubeMaxDashboard
+      uri: mongodb://127.0.0.1:27017/ShareGo
     -
       timeout: 5
       name: tubemax
-      uri: mongodb://127.0.0.1:27017/TubeMax
+      uri: mongodb://127.0.0.1:27017/ShareGo
 
   # redis配置
   redis:

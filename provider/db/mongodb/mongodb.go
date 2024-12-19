@@ -183,8 +183,15 @@ func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
 
 // 更新单条数据
 //
+// query-查询条件; update-需要更新的数据; opts-数据更新选项
+func (m *Mongodb[T]) UpdateOne(query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+	return m.UpdateMany(query, update, opts...)
+}
+
+// 根据主键id更新单条数据
+//
 // id-主键id; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateOne(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+func (m *Mongodb[T]) UpdateById(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.UpdateMany(bson.D{{"_id", objectID}}, update, opts...)
@@ -197,10 +204,10 @@ func (m *Mongodb[T]) UpdateMany(query, update bson.D, opts ...*options.UpdateOpt
 	return m.doUpdateMany(query, update, "$set", opts...)
 }
 
-// 单条数据的字段自增
+// 根据主键id自增
 //
 // id-主键id; update-需要自增的数据; opts-数据更新选项
-func (m *Mongodb[T]) IncOne(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+func (m *Mongodb[T]) IncById(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.doUpdateMany(bson.D{{"_id", objectID}}, update, "$inc", opts...)
@@ -267,6 +274,15 @@ func (m *Mongodb[T]) Find(query bson.D, opts ...*options.FindOptions) []*T {
 	cursor, err := c.Find(ctx, query, opts...)
 	throwErrorIfNotNil(err)
 	return m.DecodeList(ctx, cursor)
+}
+
+// 根据主键id查询
+//
+// id-主键id
+func (m *Mongodb[T]) FindById(id string) *T {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	throwErrorIfNotNil(err)
+	return m.FindOne(bson.D{{"_id", objectID}})
 }
 
 // 查询单条数据

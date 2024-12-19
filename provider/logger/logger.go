@@ -3,13 +3,18 @@ package logger
 import (
 	"fmt"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/robfig/cron/v3"
 	"github.com/share-group/share-go/provider/config"
 	"github.com/share-group/share-go/util/arrayutil"
+	"github.com/share-group/share-go/util/compressutil"
+	"github.com/share-group/share-go/util/fileutil"
+	"github.com/share-group/share-go/util/systemutil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -25,11 +30,13 @@ type Logger struct {
 	zapLogger *zap.Logger
 }
 
+var c = cron.New(cron.WithSeconds())
+
 func init() {
 	cmd, _ := os.Getwd()
 	log.SetFlags(log.Flags() | log.Lshortfile)
 	logrotate, _ := rotatelogs.New(
-		path.Join(cmd, config.GetString("logger.path")+"/"+config.GetString("application.name")+"-%Y-%m-%d.log"),
+		path.Join(cmd, config.GetString("logger.path"), fmt.Sprintf("%s-%s", config.GetString("application.name"), "%Y-%m-%d.log")),
 		rotatelogs.WithMaxAge(30*24*time.Hour),
 		rotatelogs.WithRotationTime(24*time.Hour),
 	)
@@ -101,6 +108,9 @@ func init() {
 	)
 
 	zap.ReplaceGlobals(zap.New(core, zap.AddCaller()))
+
+	systemutil.Goroutine(func() { compressLogFile() })
+	systemutil.Goroutine(func() { initLoggerCompress() })
 }
 
 func GetLogger(name ...string) *Logger {
@@ -145,4 +155,38 @@ func getFirstLetter(str string) string {
 		result = append(result, s[:1])
 	}
 	return strings.Join(result, ".")
+}
+
+func initLoggerCompress() {
+	c.AddFunc("1 0 0 * * *", func() {
+		compressLogFile()
+	})
+	c.Start()
+}
+
+func compressLogFile() {
+	suffix := ".tar.bz2"
+	location, _ := time.LoadLocation("Local")
+	yesterday, _ := time.ParseInLocation(time.DateOnly, time.Now().AddDate(0, 0, -1).Format(time.DateOnly), time.Now().In(location).Location())
+	regex := regexp.MustCompile(`(\d{4}-\d{2}-\d{2})`)
+	loggerPath := strings.TrimSpace(path.Join(config.GetRootDir(), config.GetString("logger.path")))
+	for _, logFile := range fileutil.ListDir(loggerPath) {
+		if strings.HasSuffix(logFile, suffix) {
+			continue
+		}
+
+		date := strings.TrimSpace(regex.FindString(logFile))
+		thisDay, _ := time.ParseInLocation(time.DateOnly, date, time.Now().In(location).Location())
+		if thisDay.UnixMilli() > yesterday.UnixMilli() {
+			continue
+		}
+
+		compressFile := path.Join(loggerPath, fmt.Sprintf("%s-%s%s", config.GetString("application.name"), date, suffix))
+		if fileutil.Exists(compressFile) {
+			continue
+		}
+
+		compressutil.Bzip2Compress(compressFile, logFile)
+		os.RemoveAll(logFile)
+	}
 }
