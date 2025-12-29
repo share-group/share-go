@@ -158,11 +158,13 @@ func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
 		document := make(bson.D, 0)
 		pValue := reflect.ValueOf(item)
 		for i := 0; i < classType.NumField(); i++ {
+			omitempty := strings.Contains(classType.Field(i).Tag.Get("bson"), "omitempty")
 			fieldName := stringutil.FirstLowerCase(classType.Field(i).Name)
-			if arrayutil.Contains(ignoreColumn, fieldName) {
+			fieldValue := pValue.Field(i).Interface()
+			isZero := reflect.ValueOf(fieldValue).IsZero()
+			if arrayutil.Contains(ignoreColumn, fieldName) || (omitempty && isZero) {
 				continue
 			}
-			fieldValue := pValue.Field(i).Interface()
 			document = append(document, bson.E{Key: fieldName, Value: fieldValue})
 		}
 
@@ -211,6 +213,18 @@ func (m *Mongodb[T]) IncById(id string, update bson.D, opts ...*options.UpdateOp
 	objectID, err := primitive.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.doUpdateMany(bson.D{{"_id", objectID}}, update, "$inc", opts...)
+}
+
+// 获取某个字段的唯一值
+//
+// entity-数据实体; fieldName-字段名; query-查询条件
+func (m *Mongodb[T]) Distinct(entity any, fieldName string, query bson.D) []any {
+	ctx := context.Background()
+	classType := reflect.TypeOf(entity)
+	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
+	result, err := c.Distinct(ctx, fieldName, query)
+	throwErrorIfNotNil(err)
+	return result
 }
 
 // 更新多条数据

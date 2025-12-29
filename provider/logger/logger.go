@@ -34,7 +34,7 @@ var c = cron.New(cron.WithSeconds())
 
 func init() {
 	cmd, _ := os.Getwd()
-	log.SetFlags(log.Flags() | log.Lshortfile)
+	log.SetFlags(log.Flags() | log.Lshortfile | log.Lmicroseconds)
 	logrotate, _ := rotatelogs.New(
 		path.Join(cmd, config.GetString("logger.path"), fmt.Sprintf("%s-%s", config.GetString("application.name"), "%Y-%m-%d.log")),
 		rotatelogs.WithMaxAge(30*24*time.Hour),
