@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/provider/config"
 	"github.com/share-group/share-go/provider/db/mongodb"
@@ -14,22 +19,30 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var logger = loggerFactory.GetLogger()
 var loggingEnable = config.GetBool("server.logging.enable")
 var loggingPretty = config.GetBool("server.logging.pretty")
-var loggingConf = arrayutil.First(arrayutil.Filter(config.GetList("data.mongodb"), func(item any) bool {
-	return reflect.DeepEqual("logging", fmt.Sprintf("%v", maputil.GetValueFromMap(item.(map[string]any), "name", "default")))
-}))
-var loggingConnectionName = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "name", "default"))
-var loggingConnectionNameURI = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "uri", ""))
-var loggingConnectionTimeout, _ = strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "timeout", "0")))
-var loggingMongodb = mongodb.ConnectMongodb(loggingConnectionName, loggingConnectionNameURI, loggingConnectionTimeout)
+var loggingConf any
+var loggingConnectionName string
+var loggingConnectionNameURI string
+var loggingConnectionTimeout int
+var loggingMongodb *mongo.Database
+
+func init() {
+	loggingConf = arrayutil.First(arrayutil.Filter(config.GetList("data.mongodb"), func(item any) bool {
+		return reflect.DeepEqual("logging", fmt.Sprintf("%v", maputil.GetValueFromMap(item.(map[string]any), "name", "default")))
+	}))
+	if loggingConf == nil {
+		return
+	}
+	loggingConnectionName = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "name", "default"))
+	loggingConnectionNameURI = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "uri", ""))
+	loggingConnectionTimeout, _ = strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "timeout", "0")))
+	loggingMongodb = mongodb.ConnectMongodb(loggingConnectionName, loggingConnectionNameURI, loggingConnectionTimeout)
+
+}
 
 func PrintRequestLog(c echo.Context) {
 	// 正式环境不打印请求日志
