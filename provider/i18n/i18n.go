@@ -1,13 +1,14 @@
 package i18n
 
 import (
-	"encoding/json"
+	"os"
+	"path"
+
+	json "github.com/bytedance/sonic"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"golang.org/x/text/language"
-	"os"
-	"path"
 )
 
 // https://github.com/nicksnyder/go-i18n/blob/main/.github/README.zh-Hans.md

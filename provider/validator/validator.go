@@ -1,17 +1,18 @@
 package validator
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
+	"reflect"
+	"strings"
+
+	json "github.com/bytedance/sonic"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	exception "github.com/share-group/share-go/exception"
 	"github.com/share-group/share-go/provider/config"
 	"github.com/share-group/share-go/util/httputil"
 	"github.com/share-group/share-go/util/systemutil"
-	"io"
-	"reflect"
-	"strings"
 )
 
 var enable = config.GetBool("server.validator.enable")

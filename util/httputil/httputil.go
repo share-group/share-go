@@ -2,13 +2,14 @@ package httputil
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	json "github.com/bytedance/sonic"
 
 	"github.com/pkg/errors"
 	loggerFactory "github.com/share-group/share-go/provider/logger"

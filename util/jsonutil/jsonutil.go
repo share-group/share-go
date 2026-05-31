@@ -1,6 +1,6 @@
 package jsonutil
 
-import "encoding/json"
+import json "github.com/bytedance/sonic"
 
 func RemoveNullValues(inputJSON string) string {
 	// 解析 JSON 数据到 map[string]interface{}

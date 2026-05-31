@@ -2,12 +2,13 @@ package logging
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	json "github.com/bytedance/sonic"
 
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/provider/config"

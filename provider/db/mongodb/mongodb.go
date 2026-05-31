@@ -2,8 +2,16 @@ package mongodb
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	json "github.com/bytedance/sonic"
+
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/util/arrayutil"
@@ -14,12 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 var connectionMap sync.Map

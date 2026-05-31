@@ -2,9 +2,10 @@ package jwt
 
 import (
 	"crypto/rsa"
-	"encoding/json"
-	"github.com/golang-jwt/jwt"
 	"time"
+
+	json "github.com/bytedance/sonic"
+	"github.com/golang-jwt/jwt"
 )
 
 type Jwt struct {

@@ -2,12 +2,13 @@ package config
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
-	"github.com/spf13/viper"
 	"log"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
 var viperConfig *viper.Viper

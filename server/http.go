@@ -2,6 +2,12 @@ package server
 
 import (
 	"fmt"
+	"math"
+	"reflect"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/share-group/share-go/constant"
 	HttpMethod "github.com/share-group/share-go/constant"
@@ -13,11 +19,6 @@ import (
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/stringutil"
 	"github.com/share-group/share-go/util/systemutil"
-	"math"
-	"reflect"
-	"regexp"
-	"strings"
-	"time"
 )
 
 var banner = ""
