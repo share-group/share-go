@@ -2,15 +2,6 @@ package logger
 
 import (
 	"fmt"
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
-	"github.com/robfig/cron/v3"
-	"github.com/share-group/share-go/provider/config"
-	"github.com/share-group/share-go/util/arrayutil"
-	"github.com/share-group/share-go/util/compressutil"
-	"github.com/share-group/share-go/util/fileutil"
-	"github.com/share-group/share-go/util/systemutil"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"path"
@@ -20,6 +11,16 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/robfig/cron/v3"
+	"github.com/share-group/share-go/provider/config"
+	"github.com/share-group/share-go/util/arrayutil"
+	"github.com/share-group/share-go/util/compressutil"
+	"github.com/share-group/share-go/util/fileutil"
+	"github.com/share-group/share-go/util/systemutil"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const frameworkName = "share-go"
@@ -90,7 +91,8 @@ func init() {
 					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
 					lastDotIndex := strings.LastIndex(prefix, ".")
 					functionName := strings.TrimSpace(stack[15][strings.LastIndex(stack[15], ".")+1 : strings.LastIndex(stack[15], "(")])
-					prefix = fmt.Sprintf("%s.%s%s", getFirstLetter(prefix[:lastDotIndex]), functionName, strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
+					prefix = fmt.Sprintf("%s.%s%s", prefix[:lastDotIndex], functionName, strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
+					prefix = strings.ReplaceAll(prefix, "controller.", "")
 				}
 			}
 
@@ -147,14 +149,6 @@ func (o *Logger) Panic(msg string, args ...any) {
 func (o *Logger) Fatal(msg string, args ...any) {
 	o.zapLogger.Fatal(fmt.Sprintf(msg, args...))
 	os.Exit(0)
-}
-
-func getFirstLetter(str string) string {
-	result := make([]string, 0)
-	for _, s := range strings.Split(str, ".") {
-		result = append(result, s[:1])
-	}
-	return strings.Join(result, ".")
 }
 
 func initLoggerCompress() {
