@@ -32,30 +32,34 @@ var middlewares = make([]func(next echo.HandlerFunc) echo.HandlerFunc, 0)
 var responseFormatter func(fun func(c echo.Context) any) echo.HandlerFunc
 var logger = loggerFactory.GetLogger()
 
-type Server struct{}
+type HttpServer struct{}
+
+func NewHttpServer() *HttpServer {
+	return &HttpServer{}
+}
 
 // 设置打印banner
-func (s *Server) SetBanner(bannerString string) {
+func (s *HttpServer) SetBanner(bannerString string) {
 	banner = bannerString
 }
 
 // 设置控制器入口
-func (s *Server) RegisterControllers(controllers ...any) {
+func (s *HttpServer) RegisterControllers(controllers ...any) {
 	handlers = append(handlers, controllers...)
 }
 
 // 设置中间件
-func (s *Server) SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc) {
+func (s *HttpServer) SetMiddlewares(middleware func(next echo.HandlerFunc) echo.HandlerFunc) {
 	middlewares = append(middlewares, middleware)
 }
 
 // 设置返回数据格式器
-func (s *Server) SetResponseFormatter(formatter func(fun func(c echo.Context) any) echo.HandlerFunc) {
+func (s *HttpServer) SetResponseFormatter(formatter func(fun func(c echo.Context) any) echo.HandlerFunc) {
 	responseFormatter = formatter
 }
 
 // 启动服务器
-func (s *Server) Run() {
+func (s *HttpServer) Run() {
 	e := echo.New()
 	addMiddleware(e)
 	mappedHandler(e)
@@ -157,12 +161,6 @@ func mappedHandler(e *echo.Echo) {
 				return returnData[0].Interface()
 			}))
 		}
-	}
-}
-
-func showBanner() {
-	if len(banner) > 0 {
-		logger.Info(banner)
 	}
 }
 

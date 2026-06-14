@@ -1,0 +1,44 @@
+# 环境变量
+env: dev
+
+# 应用配置
+application:
+  name: share-go-demo-daemon
+
+# 服务器配置
+server:
+  # 数据验证器配置
+  validator:
+    enable: false
+
+  # 系统日志打印
+  logging:
+    enable: true
+
+data:
+  # 数据库配置
+  mongodb:
+    -
+      timeout: 5
+      name: dashboard
+      uri: mongodb://127.0.0.1:27017/ShareGo
+    -
+      timeout: 5
+      name: logging
+      uri: mongodb://127.0.0.1:27017/ShareGo
+    -
+      timeout: 5
+      name: tubemax
+      uri: mongodb://127.0.0.1:27017/ShareGo
+
+  # redis配置
+  redis:
+    -
+      host: 127.0.0.1:6379
+      password:
+      db: 0
+
+# 日志配置
+logger:
+  path: ./log
+  level: DEBUG
