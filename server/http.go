@@ -171,6 +171,6 @@ func start(e *echo.Echo) {
 	if port <= 0 {
 		logger.Fatal(fmt.Sprintf("invalid port: %d", port))
 	}
-	logger.Info("%s server started on 0.0.0.0:%d in %s environment", config.GetString("application.name"), port, config.GetENV())
+	logger.Info("%s started on 0.0.0.0:%d in %s environment", config.GetString("application.name"), port, config.GetENV())
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
 }

@@ -36,6 +36,6 @@ func (s *DaemonServer) SetResponseFormatter(formatter func(fun func(c echo.Conte
 // 启动服务器
 func (s *DaemonServer) Run() {
 	showBanner()
-	logger.Info("%s server started in %s environment", config.GetString("application.name"), config.GetENV())
+	logger.Info("%s started in %s environment", config.GetString("application.name"), config.GetENV())
 	<-context.Background().Done() // 阻塞程序，直到收到系统信号
 }

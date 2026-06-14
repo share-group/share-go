@@ -2,11 +2,11 @@ package service
 
 import (
 	"fmt"
-	"log"
 
 	entity "github.com/share-group/share-go/examples/started/entity/account"
 	"github.com/share-group/share-go/provider/db"
 	"github.com/share-group/share-go/provider/db/mongodb"
+	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -14,6 +14,7 @@ type roleService struct {
 	roleEntity *mongodb.Mongodb[entity.Role]
 }
 
+var logger = loggerFactory.GetLogger()
 var RoleService = newRoleService()
 
 func newRoleService() *roleService {
@@ -43,8 +44,8 @@ func (r *roleService) RoleList(name string, page, pageSize int64) []*entity.Role
 	}
 
 	roleList, total := r.roleEntity.PaginationByPage(query, page, pageSize, make(bson.D, 0))
-	log.Println("total: ", total)
-	log.Println("roleList: ", roleList)
+	logger.Info("total: %v", total)
+	logger.Info("roleList: %v", roleList)
 	return roleList
 }
 

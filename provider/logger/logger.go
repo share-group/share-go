@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"runtime"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,8 +22,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-const frameworkName = "share-go"
 
 var callerAliasMap sync.Map
 
@@ -56,46 +54,20 @@ func init() {
 		},
 		EncodeDuration: zapcore.MillisDurationEncoder,
 		EncodeCaller: func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
-			prefix := strings.ReplaceAll(caller.FullPath(), strings.ReplaceAll(cmd, "\\", "/"), "")
-			stack := strings.Split(string(debug.Stack()), "\n")
-			lineNumber := 0
-			if len(stack) >= 17 {
-				one := strings.Split(strings.TrimSpace(stack[16]), " ")
-				if len(one) > 1 {
-					prefix = strings.TrimSpace(one[0])
-					lineNumber, _ = strconv.Atoi(strings.TrimSpace(prefix[strings.LastIndex(prefix, ":")+1:]))
-				}
-			}
-			callerAlias, _ := callerAliasMap.Load(prefix[0:strings.LastIndex(prefix, ":")])
+			_, file, lineNumber, _ := runtime.Caller(6)
+			prefix := arrayutil.Last(strings.Split(file, "/"))
+			callerAlias, _ := callerAliasMap.Load(file)
 			if callerAlias != nil && len(callerAlias.(string)) > 0 {
 				prefix = callerAlias.(string)
 			} else {
-				if !strings.HasPrefix(prefix, config.GetRootDir()) {
-					atvIndex := strings.Index(strings.ReplaceAll(prefix, frameworkName, " "), "@v")
-					if atvIndex > -1 {
-						prefix = prefix[atvIndex:]
-						prefix = prefix[strings.Index(prefix, "/"):]
-						prefix = strings.ReplaceAll(prefix[1:], "/", ".")
-					} else {
-						prefix = fmt.Sprintf("%s", strings.ReplaceAll(prefix[strings.Index(prefix, frameworkName)+len(frameworkName)+1:], "/", "."))
-					}
-					prefix = prefix[:strings.LastIndex(prefix, ".")]
-					prefix = arrayutil.Last(strings.Split(prefix, "."))
+				if !strings.HasPrefix(file, config.GetRootDir()) {
 					prefix = fmt.Sprintf("share.go.%s:%d", prefix, lineNumber)
 				} else {
-					prefix = strings.TrimSpace(strings.ReplaceAll(prefix, config.GetRootDir(), ""))
-					one := strings.Split(prefix, " ")
-					if len(one) > 1 {
-						prefix = strings.TrimSpace(one[0])
-					}
-					prefix = strings.ReplaceAll(prefix[1:], "/", ".")
-					lastDotIndex := strings.LastIndex(prefix, ".")
-					functionName := strings.TrimSpace(stack[15][strings.LastIndex(stack[15], ".")+1 : strings.LastIndex(stack[15], "(")])
-					prefix = fmt.Sprintf("%s.%s%s", prefix[:lastDotIndex], functionName, strings.ReplaceAll(prefix[lastDotIndex:], ".go", ""))
-					prefix = strings.ReplaceAll(prefix, "controller.", "")
+					prefix = strings.TrimSpace(strings.ReplaceAll(file, config.GetRootDir(), ""))
+					prefix = strings.TrimSpace(strings.ReplaceAll(prefix[1:], "/", "."))
+					prefix = fmt.Sprintf("%s:%d", prefix, lineNumber)
 				}
 			}
-
 			enc.AppendString(strings.TrimSpace(prefix))
 		},
 		EncodeName: zapcore.FullNameEncoder,

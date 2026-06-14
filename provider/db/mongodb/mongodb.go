@@ -127,9 +127,9 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 		_, err := m.connection.Collection(collection).Indexes().CreateOne(ctx, indexModel)
 		throwErrorIfNotNil(err)
 
-		key_s, _ := json.Marshal(indexModel.Keys)
-		option_s, _ := json.Marshal(indexModel.Options)
-		logger.Info("collection [%s] create index: %v, index options: %v", collection, string(key_s), jsonutil.RemoveNullValues(string(option_s)))
+		key_s, _ := json.MarshalString(indexModel.Keys)
+		option_s, _ := json.MarshalString(indexModel.Options)
+		logger.Info("collection [%s] create index: %v, index options: %v", collection, regexp.MustCompile(`\s+`).ReplaceAllString(key_s, ""), jsonutil.RemoveNullValues(option_s))
 	}
 }
 
