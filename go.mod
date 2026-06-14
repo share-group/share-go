@@ -3,7 +3,7 @@ module github.com/share-group/share-go
 go 1.26
 
 require (
-	github.com/bytedance/sonic v1.15.1
+	github.com/bytedance/sonic v1.15.2
 	github.com/dsnet/compress v0.0.1
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -17,7 +17,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	go.mongodb.org/mongo-driver v1.17.9
 	go.uber.org/zap v1.28.0
-	golang.org/x/text v0.37.0
+	golang.org/x/text v0.38.0
 )
 
 require (
@@ -56,10 +56,10 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/arch v0.27.0 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/arch v0.28.0 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
