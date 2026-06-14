@@ -24,14 +24,23 @@ data:
     -
       timeout: 5
       name: dashboard
+      min-pool-size: 5
+      max-pool-size: 20
+      max-connecting: 5
       uri: mongodb://127.0.0.1:27017/ShareGo
     -
       timeout: 5
       name: logging
+      min-pool-size: 5
+      max-pool-size: 20
+      max-connecting: 5
       uri: mongodb://127.0.0.1:27017/ShareGo
     -
       timeout: 5
       name: tubemax
+      min-pool-size: 5
+      max-pool-size: 20
+      max-connecting: 5
       uri: mongodb://127.0.0.1:27017/ShareGo
 
   # redis配置

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/share-group/share-go/util/systemutil"
 	"github.com/spf13/viper"
 )
 
@@ -17,7 +18,7 @@ func init() {
 	godotenv.Load()
 	cmd, _ := os.Getwd()
 	viperConfig = viper.New()
-	viperConfig.SetConfigName(fmt.Sprintf("config_%v", os.Getenv("ENV")))
+	viperConfig.SetConfigName(fmt.Sprintf("%v", systemutil.If(len(os.Getenv("ENV")) > 0, fmt.Sprintf("config_%v", os.Getenv("ENV")), "config")))
 	viperConfig.SetConfigType("yaml")
 	viperConfig.AddConfigPath(path.Join(cmd, "config"))
 	err := viperConfig.ReadInConfig()

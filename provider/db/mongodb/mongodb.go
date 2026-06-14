@@ -17,6 +17,7 @@ import (
 	"github.com/share-group/share-go/util/jsonutil"
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/stringutil"
+	"github.com/share-group/share-go/util/systemutil"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -33,18 +34,20 @@ type Mongodb[T any] struct {
 func init() {
 	for _, conf := range config.GetList("data.mongodb") {
 		name := fmt.Sprintf("%v", maputil.GetValueFromMap(conf.(map[string]any), "name", "default"))
-		uri := fmt.Sprintf("%v", maputil.GetValueFromMap(conf.(map[string]any), "uri", ""))
-		timeout, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf.(map[string]any), "timeout", 0)))
-
 		if _, ok := connectionMap.Load(name); ok {
 			logger.Fatal("only one default connection is allowed")
 		}
-
-		connectionMap.Store(name, ConnectMongodb(name, uri, timeout))
+		connectionMap.Store(name, ConnectMongodb(conf.(map[string]any)))
 	}
 }
 
-func ConnectMongodb(name string, uri string, timeout int) *mongo.Database {
+func ConnectMongodb(conf map[string]any) *mongo.Database {
+	uri := fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "uri", ""))
+	name := fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "name", "default"))
+	minPoolSize, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "min-pool-size", "default")))
+	maxPoolSize, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "max-pool-size", "default")))
+	maxConnecting, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "max-connecting", "default")))
+	timeout, _ := strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(conf, "timeout", 0)))
 	conn, ok := connectionMap.Load(name)
 	if ok {
 		return conn.(*mongo.Database)
@@ -53,7 +56,17 @@ func ConnectMongodb(name string, uri string, timeout int) *mongo.Database {
 	// 设置客户端连接配置
 	_timeout := time.Duration(timeout) * time.Second
 	ctx := context.Background()
-	co := options.Client().ApplyURI(uri).SetTimeout(_timeout).SetMaxPoolSize(50).SetMinPoolSize(5)
+	co := options.Client().ApplyURI(uri).
+		SetTimeout(_timeout).
+		SetMinPoolSize(uint64(minPoolSize)).
+		SetMaxPoolSize(uint64(systemutil.If(maxPoolSize > 0, maxPoolSize, 100).(int))).
+		SetMaxConnecting(uint64(systemutil.If(maxConnecting > 0, maxConnecting, 2).(int)))
+
+	// 校验配置
+	if err := co.Validate(); err != nil {
+		logger.Fatal("validate error: %v", err)
+	}
+
 	// 连接到MongoDB
 	client, err := mongo.Connect(co)
 	if err != nil {

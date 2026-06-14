@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -26,22 +25,16 @@ var logger = loggerFactory.GetLogger()
 var loggingEnable = config.GetBool("server.logging.enable")
 var loggingPretty = config.GetBool("server.logging.pretty")
 var loggingConf any
-var loggingConnectionName string
-var loggingConnectionNameURI string
-var loggingConnectionTimeout int
 var loggingMongodb *mongo.Database
 
 func init() {
 	loggingConf = arrayutil.First(arrayutil.Filter(config.GetList("data.mongodb"), func(item any) bool {
 		return reflect.DeepEqual("logging", fmt.Sprintf("%v", maputil.GetValueFromMap(item.(map[string]any), "name", "default")))
 	}))
-	if loggingConf == nil {
+	if loggingConf == nil || len(loggingConf.(map[string]any)) <= 0 {
 		return
 	}
-	loggingConnectionName = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "name", "default"))
-	loggingConnectionNameURI = fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "uri", ""))
-	loggingConnectionTimeout, _ = strconv.Atoi(fmt.Sprintf("%v", maputil.GetValueFromMap(loggingConf.(map[string]any), "timeout", "0")))
-	loggingMongodb = mongodb.ConnectMongodb(loggingConnectionName, loggingConnectionNameURI, loggingConnectionTimeout)
+	loggingMongodb = mongodb.ConnectMongodb(loggingConf.(map[string]any))
 
 }
 
