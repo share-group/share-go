@@ -2,11 +2,12 @@ package service
 
 import (
 	"fmt"
+	"log"
+
 	entity "github.com/share-group/share-go/examples/started/entity/account"
 	"github.com/share-group/share-go/provider/db"
 	"github.com/share-group/share-go/provider/db/mongodb"
-	"go.mongodb.org/mongo-driver/bson"
-	"log"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type roleService struct {

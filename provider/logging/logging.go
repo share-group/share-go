@@ -17,9 +17,9 @@ import (
 	"github.com/share-group/share-go/util/arrayutil"
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/systemutil"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var logger = loggerFactory.GetLogger()
@@ -197,6 +197,6 @@ func SaveJSONRequestLog(c echo.Context) {
 func createIndex(collectionName, indexName string, indexes bson.D) {
 	ctx := context.Background()
 	indexModel := mongo.IndexModel{Keys: indexes}
-	indexModel.Options = options.Index().SetName(indexName).SetBackground(true)
+	indexModel.Options = options.Index().SetName(indexName)
 	systemutil.Goroutine(func() { loggingMongodb.Collection(collectionName).Indexes().CreateOne(ctx, indexModel) })
 }

@@ -11,17 +11,15 @@ import (
 	"time"
 
 	json "github.com/bytedance/sonic"
-
 	"github.com/share-group/share-go/provider/config"
 	loggerFactory "github.com/share-group/share-go/provider/logger"
 	"github.com/share-group/share-go/util/arrayutil"
 	"github.com/share-group/share-go/util/jsonutil"
 	"github.com/share-group/share-go/util/maputil"
 	"github.com/share-group/share-go/util/stringutil"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var connectionMap sync.Map
@@ -55,9 +53,9 @@ func ConnectMongodb(name string, uri string, timeout int) *mongo.Database {
 	// 设置客户端连接配置
 	_timeout := time.Duration(timeout) * time.Second
 	ctx := context.Background()
-	co := options.Client().ApplyURI(uri).SetTimeout(_timeout).SetSocketTimeout(_timeout).SetConnectTimeout(_timeout)
+	co := options.Client().ApplyURI(uri).SetTimeout(_timeout).SetMaxPoolSize(50).SetMinPoolSize(5)
 	// 连接到MongoDB
-	client, err := mongo.Connect(ctx, co)
+	client, err := mongo.Connect(co)
 	if err != nil {
 		logger.Fatal("%v", err)
 	}
@@ -118,7 +116,7 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 		sparse, _ := strconv.ParseBool(fmt.Sprintf("%v", maputil.GetValueFromMap(indexMap, "sparse", false)))
 		unique, _ := strconv.ParseBool(fmt.Sprintf("%v", maputil.GetValueFromMap(indexMap, "unique", false)))
 		indexModel := mongo.IndexModel{Keys: keys}
-		indexModel.Options = options.Index().SetName(indexName).SetBackground(true)
+		indexModel.Options = options.Index().SetName(indexName)
 		if unique {
 			indexModel.Options.SetUnique(unique)
 		}
@@ -143,14 +141,14 @@ func (m *Mongodb[T]) GetConnection() *mongo.Database {
 // 插入单条数据
 //
 // entity-数据实体
-func (m *Mongodb[T]) InsertOne(entity any) primitive.ObjectID {
+func (m *Mongodb[T]) InsertOne(entity any) bson.ObjectID {
 	return arrayutil.First(m.InsertMany(entity))
 }
 
 // 插入多条数据
 //
 // entity-数据实体(可以传数组或者传无限个单条)
-func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
+func (m *Mongodb[T]) InsertMany(entity ...any) []bson.ObjectID {
 	ctx := context.Background()
 	classType := reflect.TypeOf(arrayutil.First(entity))
 	ignoreColumn := []string{"id", "createTime", "updateTime"}
@@ -178,9 +176,9 @@ func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
 
 	result, err := c.InsertMany(ctx, documents)
 	throwErrorIfNotNil(err)
-	insertedIDs := make([]primitive.ObjectID, 0)
+	insertedIDs := make([]bson.ObjectID, 0)
 	for _, insertedID := range result.InsertedIDs {
-		insertedIDs = append(insertedIDs, insertedID.(primitive.ObjectID))
+		insertedIDs = append(insertedIDs, insertedID.(bson.ObjectID))
 	}
 	return insertedIDs
 }
@@ -188,15 +186,15 @@ func (m *Mongodb[T]) InsertMany(entity ...any) []primitive.ObjectID {
 // 更新单条数据
 //
 // query-查询条件; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateOne(query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+func (m *Mongodb[T]) UpdateOne(query, update bson.D, opts ...options.Lister[options.UpdateManyOptions]) *mongo.UpdateResult {
 	return m.UpdateMany(query, update, opts...)
 }
 
 // 根据主键id更新单条数据
 //
 // id-主键id; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateById(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (m *Mongodb[T]) UpdateById(id string, update bson.D, opts ...options.Lister[options.UpdateManyOptions]) *mongo.UpdateResult {
+	objectID, err := bson.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.UpdateMany(bson.D{{"_id", objectID}}, update, opts...)
 }
@@ -204,15 +202,15 @@ func (m *Mongodb[T]) UpdateById(id string, update bson.D, opts ...*options.Updat
 // 更新多条数据
 //
 //	query-查询条件; update-需要更新的数据; opts-数据更新选项
-func (m *Mongodb[T]) UpdateMany(query, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+func (m *Mongodb[T]) UpdateMany(query, update bson.D, opts ...options.Lister[options.UpdateManyOptions]) *mongo.UpdateResult {
 	return m.doUpdateMany(query, update, "$set", opts...)
 }
 
 // 根据主键id自增
 //
 // id-主键id; update-需要自增的数据; opts-数据更新选项
-func (m *Mongodb[T]) IncById(id string, update bson.D, opts ...*options.UpdateOptions) *mongo.UpdateResult {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (m *Mongodb[T]) IncById(id string, update bson.D, opts ...options.Lister[options.UpdateManyOptions]) *mongo.UpdateResult {
+	objectID, err := bson.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.doUpdateMany(bson.D{{"_id", objectID}}, update, "$inc", opts...)
 }
@@ -220,19 +218,18 @@ func (m *Mongodb[T]) IncById(id string, update bson.D, opts ...*options.UpdateOp
 // 获取某个字段的唯一值
 //
 // entity-数据实体; fieldName-字段名; query-查询条件
-func (m *Mongodb[T]) Distinct(entity any, fieldName string, query bson.D) []any {
+func (m *Mongodb[T]) Distinct(entity any, fieldName string, query bson.D) *mongo.DistinctResult {
 	ctx := context.Background()
 	classType := reflect.TypeOf(entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
-	result, err := c.Distinct(ctx, fieldName, query)
-	throwErrorIfNotNil(err)
+	result := c.Distinct(ctx, fieldName, query)
 	return result
 }
 
 // 更新多条数据
 //
 // query-查询条件; update-需要更新的数据; operator-操作符; opts-数据更新选项
-func (m *Mongodb[T]) doUpdateMany(query, update bson.D, operator string, opts ...*options.UpdateOptions) *mongo.UpdateResult {
+func (m *Mongodb[T]) doUpdateMany(query, update bson.D, operator string, opts ...options.Lister[options.UpdateManyOptions]) *mongo.UpdateResult {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
@@ -247,7 +244,7 @@ func (m *Mongodb[T]) doUpdateMany(query, update bson.D, operator string, opts ..
 // 删除单条数据
 //
 // query-查询条件; opts-数据删除选项
-func (m *Mongodb[T]) DeleteOne(query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+func (m *Mongodb[T]) DeleteOne(query bson.D, opts ...options.Lister[options.DeleteOneOptions]) *mongo.DeleteResult {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
@@ -259,7 +256,7 @@ func (m *Mongodb[T]) DeleteOne(query bson.D, opts ...*options.DeleteOptions) *mo
 // 删除多条数据
 //
 // query-查询条件; opts-数据删除选项
-func (m *Mongodb[T]) DeleteMany(query bson.D, opts ...*options.DeleteOptions) *mongo.DeleteResult {
+func (m *Mongodb[T]) DeleteMany(query bson.D, opts ...options.Lister[options.DeleteManyOptions]) *mongo.DeleteResult {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
@@ -271,7 +268,7 @@ func (m *Mongodb[T]) DeleteMany(query bson.D, opts ...*options.DeleteOptions) *m
 // 统计总条数
 //
 // query-查询条件; opts-统计选项
-func (m *Mongodb[T]) Count(query bson.D, opts ...*options.CountOptions) int64 {
+func (m *Mongodb[T]) Count(query bson.D, opts ...options.Lister[options.CountOptions]) int64 {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
@@ -283,7 +280,7 @@ func (m *Mongodb[T]) Count(query bson.D, opts ...*options.CountOptions) int64 {
 // 查询多条数据
 //
 // query-查询条件; entity-数据实体; opts-查询选项
-func (m *Mongodb[T]) Find(query bson.D, opts ...*options.FindOptions) []*T {
+func (m *Mongodb[T]) Find(query bson.D, opts ...options.Lister[options.FindOptions]) []*T {
 	ctx := context.Background()
 	classType := reflect.TypeOf(m.entity)
 	c := m.connection.Collection(strings.Split(fmt.Sprintf("%v", classType), ".")[1])
@@ -296,7 +293,7 @@ func (m *Mongodb[T]) Find(query bson.D, opts ...*options.FindOptions) []*T {
 //
 // id-主键id
 func (m *Mongodb[T]) FindById(id string) *T {
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	throwErrorIfNotNil(err)
 	return m.FindOne(bson.D{{"_id", objectID}})
 }
@@ -305,19 +302,15 @@ func (m *Mongodb[T]) FindById(id string) *T {
 //
 // query-查询条件; entity-数据实体
 func (m *Mongodb[T]) FindOne(query bson.D) *T {
-	opts := &options.FindOptions{}
-	opts.SetLimit(1)
-	return arrayutil.First(m.Find(query, opts))
+	return arrayutil.First(m.Find(query, options.Find().SetLimit(1)))
 }
 
 // 游标翻页
 //
 // query-查询条件; cursor-游标; pageSize-分页大小; sort-排序方式
 func (m *Mongodb[T]) PaginationByCursor(query bson.D, cursor *string, pageSize int64, sort bson.D) []*T {
-	opts := &options.FindOptions{}
-	opts.SetLimit(pageSize)
 	if len(*cursor) > 0 {
-		objectID, _ := primitive.ObjectIDFromHex(*cursor)
+		objectID, _ := bson.ObjectIDFromHex(*cursor)
 		query = bson.D{{"_id", bson.D{{"$lt", objectID}}}}
 	}
 
@@ -327,22 +320,17 @@ func (m *Mongodb[T]) PaginationByCursor(query bson.D, cursor *string, pageSize i
 			finalSort = append(finalSort, s)
 		}
 	}
-	opts.SetSort(finalSort)
-	return m.Find(query, opts)
+	return m.Find(query, options.Find().SetLimit(1).SetSort(finalSort))
 }
 
 // 页码翻页
 //
 // query-查询条件; page-当前页码; pageSize-分页大小; sort-排序方式
 func (m *Mongodb[T]) PaginationByPage(query bson.D, page, pageSize int64, sort bson.D) ([]*T, int64) {
-	opts := &options.FindOptions{}
-	opts.SetLimit(pageSize)
-	opts.SetSkip((page - 1) * pageSize)
 	if len(sort) <= 0 {
 		sort = bson.D{{"_id", -1}}
 	}
-	opts.SetSort(sort)
-	return m.Find(query, opts), m.Count(query)
+	return m.Find(query, options.Find().SetLimit(pageSize).SetSkip((page-1)*pageSize).SetSort(sort)), m.Count(query)
 }
 
 func dbName(uri string) string {
