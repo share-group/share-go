@@ -1,6 +1,16 @@
 package jsonutil
 
-import json "github.com/bytedance/sonic"
+import (
+	json "github.com/bytedance/sonic"
+)
+
+func Decode[T any](data []byte, target T) *T {
+	err := json.Unmarshal(data, &target)
+	if err != nil {
+		return nil
+	}
+	return &target
+}
 
 func RemoveNullValues(inputJSON string) string {
 	// 解析 JSON 数据到 map[string]interface{}
