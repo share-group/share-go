@@ -11,6 +11,7 @@ func ListDir(dir string) []string {
 	var files []string
 
 	// 打开目录
+	os.MkdirAll(dir, os.ModePerm)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		// 处理错误
 		if err != nil {

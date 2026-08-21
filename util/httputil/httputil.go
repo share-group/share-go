@@ -123,3 +123,12 @@ func ParseQueryString(urlString string) string {
 	b, _ := json.Marshal(queryStringMap)
 	return string(b)
 }
+
+// map转成querystring
+func Map2Query(params map[string]any) string {
+	queryList := make([]string, 0)
+	for key, value := range params {
+		queryList = append(queryList, fmt.Sprintf("%v=%v", key, url.PathEscape(fmt.Sprintf("%v", value))))
+	}
+	return strings.Join(queryList, "&")
+}
