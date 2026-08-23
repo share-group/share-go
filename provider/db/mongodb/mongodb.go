@@ -115,13 +115,7 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 		}
 
 		keys := make(bson.D, 0)
-		regexpPattern, _ := regexp.Compile("\\s+")
-		indexJSON = regexpPattern.ReplaceAllString(indexJSON, "")
-		keyString := indexJSON[strings.Index(indexJSON, `"keys":{`)+8 : strings.Index(indexJSON, `}`)]
-		for _, key := range strings.Split(keyString, ",") {
-			arr := strings.Split(key, ":")
-			k := strings.ReplaceAll(strings.TrimSpace(arr[0]), `"`, "")
-			v, _ := strconv.Atoi(strings.TrimSpace(arr[1]))
+		for k, v := range maputil.GetValueFromMap(indexMap, "keys", nil).(map[string]any) {
 			keys = append(keys, bson.E{Key: k, Value: v})
 		}
 
@@ -130,13 +124,13 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 		unique, _ := strconv.ParseBool(fmt.Sprintf("%v", maputil.GetValueFromMap(indexMap, "unique", false)))
 		indexModel := mongo.IndexModel{Keys: keys}
 		indexModel.Options = options.Index().SetName(indexName)
-		options := make(map[string]any)
+		optionsMap := make(map[string]any)
 		if unique {
-			options["unique"] = true
+			optionsMap["unique"] = true
 			indexModel.Options.SetUnique(unique)
 		}
 		if sparse {
-			options["sparse"] = true
+			optionsMap["sparse"] = true
 			indexModel.Options.SetSparse(sparse)
 		}
 
@@ -144,7 +138,7 @@ func (m *Mongodb[T]) EnsureIndex(entity T) {
 		throwErrorIfNotNil(err)
 
 		key_s, _ := json.MarshalString(indexModel.Keys)
-		option_s, _ := json.MarshalString(options)
+		option_s, _ := json.MarshalString(optionsMap)
 		logger.Info("collection [%s] create index: %v, index options: %v", collection, regexp.MustCompile(`\s+`).ReplaceAllString(key_s, ""), jsonutil.RemoveNullValues(option_s))
 	}
 }
