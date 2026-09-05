@@ -168,7 +168,9 @@ func SaveJSONRequestLog(c echo.Context) {
 		logEntity = append(logEntity, bson.E{Key: "response", Value: response})
 		logEntity = append(logEntity, bson.E{Key: "status", Value: c.Response().Status})
 		logEntity = append(logEntity, bson.E{Key: "duration", Value: exec.String()})
-		logEntity = append(logEntity, bson.E{Key: "requestTime", Value: c.Get("requestTime").(time.Time).UnixMilli()})
+		if requestTime != nil {
+			logEntity = append(logEntity, bson.E{Key: "requestTime", Value: requestTime.(time.Time).UnixMilli()})
+		}
 		logEntity = append(logEntity, bson.E{Key: "responseTime", Value: time.Now().UnixMilli()})
 
 		collectionName := fmt.Sprintf("Log_%s", time.Now().Format("200601"))
