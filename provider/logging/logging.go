@@ -131,7 +131,12 @@ func SaveJSONRequestLog(c echo.Context) {
 	if req != nil {
 		requestBytes = req.([]byte)
 	}
-	responseBytes := c.Get("response").([]byte)
+
+	responseBytes := make([]byte, 0)
+	res := c.Get("response")
+	if res != nil {
+		responseBytes = res.([]byte)
+	}
 	json.Unmarshal(requestBytes, &request)
 	json.Unmarshal(responseBytes, &response)
 	exec := time.Since(requestTime.(time.Time))
