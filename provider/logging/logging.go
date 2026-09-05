@@ -139,7 +139,10 @@ func SaveJSONRequestLog(c echo.Context) {
 	}
 	json.Unmarshal(requestBytes, &request)
 	json.Unmarshal(responseBytes, &response)
-	exec := time.Since(requestTime.(time.Time))
+	var exec time.Duration
+	if requestTime != nil {
+		exec = time.Since(requestTime.(time.Time))
+	}
 
 	if loggingMongodb != nil {
 		logEntity := bson.D{
